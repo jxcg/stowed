@@ -129,6 +129,10 @@ where they conflict.
     a single hue for the face. The frame is the only second colour: a tint of the same hue, or
     gold foil for the jewel palettes. One of four suits. Both picked at creation and kept;
     user-chosen palettes come later.
+22. **Trips page has two views, Stack and Deck**, switched from a menu on the page and
+    remembered. Stack is the vertical scroll of cards with a gap. Deck is a pile: the top trip
+    in full, up to four more behind it at a slight angle, a deeper shadow the more trips there
+    are, swipe the top card away to bring the next forward. Never more than five drawn.
 
 On-device only. One user, local persistence, no account, no network.
 
