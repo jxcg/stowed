@@ -202,3 +202,16 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
         #expect(bag.items.first { $0.name == "T-shirt" }?.quantity == 2)
     }
 }
+
+@Suite struct SchemaMigration {
+    // Root cause of "adding a trip shows nothing": a mandatory attribute with no default makes
+    // lightweight migration fail and the store never loads. Every non-optional attribute
+    // added after v0.1.0 must carry a default.
+    @Test func newMandatoryAttributesHaveDefaults() throws {
+        let item = try #require(Schema([Item.self]).entities.first { $0.name == "Item" })
+        for name in ["quantity", "note", "returning"] {
+            let attribute = try #require(item.attributesByName[name])
+            #expect(attribute.defaultValue != nil, "\(name) has no default, old stores cannot migrate")
+        }
+    }
+}
