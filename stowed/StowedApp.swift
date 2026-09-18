@@ -1,9 +1,11 @@
+import SwiftData
 import SwiftUI
 
 @main struct StowedApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            TripListView()
         }
+        .modelContainer(for: Trip.self)
     }
 }
