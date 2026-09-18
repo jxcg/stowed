@@ -6,8 +6,7 @@ enum EmojiGuess {
     static let bagFallback = "🧳"
     static let itemFallback = "📦"
 
-    // ponytail: flat keyword list. Add words as real names show up. Upgrade path if this
-    // gets too thin: a locale-aware or ML lookup. Not before.
+    // English keyword list. Add words as real names show up.
     private static let keywords: [(String, String)] = [
         // Bags
         ("suitcase", "🧳"), ("luggage", "🧳"), ("carry-on", "🧳"), ("carry on", "🧳"),
