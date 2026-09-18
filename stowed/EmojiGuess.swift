@@ -1,13 +1,13 @@
 import SwiftUI
 
-/// Picks an emoji from a name, per SPEC decision 9. Longest matching keyword wins so
-/// "camera bag" beats "bag". English only for now; the user can always override.
+// Name in, emoji out (decision 9). Longest keyword wins, so "camera bag" beats "bag".
+// English only. Wrong guess? The user taps the emoji and picks their own.
 enum EmojiGuess {
     static let bagFallback = "🧳"
     static let itemFallback = "📦"
 
-    // ponytail: flat keyword list, extend as real names show up. A locale-aware or
-    // ML-backed guess is the upgrade path if this proves too thin.
+    // ponytail: flat keyword list. Add words as real names show up. Upgrade path if this
+    // gets too thin: a locale-aware or ML lookup. Not before.
     private static let keywords: [(String, String)] = [
         // Bags
         ("suitcase", "🧳"), ("luggage", "🧳"), ("carry-on", "🧳"), ("carry on", "🧳"),
@@ -44,8 +44,8 @@ enum EmojiGuess {
     ]
 
     static func guess(for name: String, fallback: String) -> String {
+        // Leading space so we only match at word starts: "socks" hits "sock", "that" misses "hat".
         let lowered = " " + name.lowercased()
-        // Word-start match: "socks" hits "sock", "that" does not hit "hat".
         let match = keywords
             .filter { lowered.contains(" " + $0.0) }
             .max { $0.0.count < $1.0.count }
@@ -53,22 +53,19 @@ enum EmojiGuess {
     }
 }
 
-/// A one-grapheme text field fed by the system emoji keyboard. Shared by the bag and item
-/// forms so the clamp-to-one-character rule lives once.
+// One-character text field. The system emoji keyboard does the picking.
 struct EmojiField: View {
     @Binding var emoji: String
     let placeholder: String
-    /// Flipped the first time the user types their own emoji, so guessing stops overriding it.
-    @Binding var userChoseEmoji: Bool
 
     var body: some View {
         TextField(placeholder, text: $emoji)
             .frame(width: 44)
             .multilineTextAlignment(.center)
+            // Keep only the last character typed. Never a word in here.
             .onChange(of: emoji) { _, new in
                 let last = String(new.suffix(1))
                 if new != last { emoji = last }
-                if !last.isEmpty { userChoseEmoji = true }
             }
             .accessibilityLabel("Emoji")
     }

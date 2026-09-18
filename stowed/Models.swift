@@ -24,14 +24,13 @@ final class Trip {
 
     var items: [Item] { bags.flatMap(\.items) }
 
-    /// Case- and diacritic-insensitive substring match, scoped to this trip (SPEC §3.4).
+    // Same matching Finder uses: ignores case and accents, partial words hit.
     func items(matching query: String) -> [Item] {
         items.filter { $0.name.localizedStandardContains(query) }
     }
 
-    /// Both checkpoints conceptually exist from trip creation (SPEC decision 7). They are
-    /// materialised on first access because SwiftData does not reliably persist relationships
-    /// assigned inside an initialiser, before the object is in a context.
+    // Find or create. Why not in init? SwiftData drops relationships set before insert.
+    // Net effect is the same: both checks exist from trip creation (decision 7).
     func checkpoint(_ kind: CheckpointKind) -> Checkpoint {
         if let existing = checkpoints.first(where: { $0.kind == kind }) { return existing }
         let created = Checkpoint(kind: kind)
@@ -82,10 +81,11 @@ final class Checkpoint {
 
     var isClosed: Bool { closedAt != nil }
 
-    // MARK: Expected set (SPEC §3.3, decisions 2 and 5)
+    // MARK: Expected set
 
-    /// Closed: history frozen at `closedAt`. Open: current reality.
-    /// Only the return check honours "not returning"; outbound still has to be packed.
+    // THE rule. Everything else hangs off this. SPEC 3.3.
+    // Closed = frozen at closedAt. Open = what you have right now.
+    // Only the RETURN check cares about "not returning". Outbound still has to be packed.
     func expects(_ item: Item) -> Bool {
         if let closedAt {
             guard item.addedAt <= closedAt else { return false }
@@ -96,27 +96,21 @@ final class Checkpoint {
         return true
     }
 
-    var expectedItems: [Item] { trip?.items.filter(expects) ?? [] }
+    // MARK: Progress. Computed every time, never stored, so it cannot go stale.
 
-    // MARK: Progress — computed live, never stored (SPEC §3.3)
+    var expectedCount: Int { trip?.items.count(where: expects) ?? 0 }
 
-    var expectedCount: Int { expectedItems.count }
-
-    /// Confirmations whose item is still in the expected set. A confirmation for an item
-    /// that later left the set (deleted, or marked not-returning) simply stops counting.
-    var confirmedCount: Int {
-        confirmations.filter { $0.item.map(expects) ?? false }.count
-    }
+    // Only ticks for items still expected. Deleted or not-returning items just stop counting.
+    var confirmedCount: Int { confirmations.count { $0.item.map(expects) ?? false } }
 
     var isComplete: Bool { confirmedCount == expectedCount }
 
-    // MARK: Ticking (decisions 6 and 8)
+    // MARK: Ticking. Closed check = read only. No reopen, ever (decision 6).
 
     func isConfirmed(_ item: Item) -> Bool {
         confirmations.contains { $0.item === item }
     }
 
-    /// No-op once closed, and never creates a duplicate for the same item.
     func confirm(_ item: Item, at date: Date = .now) {
         guard !isClosed, !isConfirmed(item) else { return }
         let confirmation = Confirmation(confirmedAt: date)
@@ -124,14 +118,12 @@ final class Checkpoint {
         confirmations.append(confirmation)
     }
 
-    /// No-op once closed: a finished check is read-only.
     func unconfirm(_ item: Item) {
         guard !isClosed, let existing = confirmations.first(where: { $0.item === item }) else { return }
         confirmations.removeAll { $0 === existing }
         existing.modelContext?.delete(existing)
     }
 
-    /// Permanent. There is no reopen (decision 6).
     func close(at date: Date = .now) {
         guard !isClosed else { return }
         closedAt = date
