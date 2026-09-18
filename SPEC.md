@@ -118,11 +118,11 @@ where they conflict.
     fail to load on top of a v0.1.0 store, and the app ran with no store at all, silently
     dropping every insert. Versioned schemas start at the first TestFlight build.
 
-20. **Trip cards look like playing cards.** Gradient back from a hue picked at random when the
-    trip is created and stored on it, so a card keeps its colour forever; paper face with a
-    double rule; the trip's initial in two corners, the bottom one rotated; packed emoji as the
-    pips; New York serif for name and marks. User-chosen colours come later.
-### Data scope (first version)
+20. **Trip cards look like playing cards.** Thin white frame, full-bleed gradient art from a
+    hue picked at random when the trip is created and stored on it, so a card keeps its
+    colour forever; film grain and a shimmer over the art; the trip's initial in two corners,
+    the bottom one rotated; packed emoji as the pips; New York serif for name and marks.
+    User-chosen colours come later.
 
 On-device only. One user, local persistence, no account, no network.
 
