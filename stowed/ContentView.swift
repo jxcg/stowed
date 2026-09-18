@@ -69,8 +69,8 @@ struct ContentView: View {
     }
 }
 
-// A playing card (decision 20): thin white frame, full-bleed gradient art from the trip's hue
-// with grain and a shimmer, the initial in two corners, the packed emoji as the pips.
+// A playing card (decision 20): one deep colour, darker toward the edges, grain heaviest in the
+// middle, a light foil frame in the same hue, the initial in two corners, packed emoji as pips.
 private struct TripCard: View {
     let trip: Trip
     var tilt: CGSize = .zero
@@ -95,7 +95,8 @@ private struct TripCard: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 28).fill(.white)
+            RoundedRectangle(cornerRadius: 28)
+                .fill(LinearGradient(colors: [tone(0, 0.3, 0.98), tone(0, 0.5, 0.82)], startPoint: .topLeading, endPoint: .bottomTrailing))
             art.clipShape(RoundedRectangle(cornerRadius: 20)).padding(9)
 
             VStack(spacing: 10) {
@@ -142,21 +143,22 @@ private struct TripCard: View {
         .accessibilityElement(children: .combine)
     }
 
-    // Gradient, a sheen that follows the tilt, a diagonal shimmer band, then grain on top.
+    // One hue: mid tone in the centre falling to a darker edge. A sheen that follows the tilt,
+    // a faint shimmer band, then grain masked so it is heaviest in the middle.
     private var art: some View {
         ZStack {
-            LinearGradient(
-                colors: [tone(0, 0.75, 0.95), tone(0.08, 0.85, 0.75), tone(0.2, 0.9, 0.45)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-            RadialGradient(colors: [.white.opacity(0.4), .clear], center: .topLeading, startRadius: 0, endRadius: 380)
+            RadialGradient(colors: [tone(0, 0.7, 0.52), tone(0, 0.85, 0.26)], center: .center, startRadius: 0, endRadius: 440)
+            RadialGradient(colors: [.white.opacity(0.16), .clear], center: .topLeading, startRadius: 0, endRadius: 360)
                 .offset(tilt)
             LinearGradient(
-                stops: [.init(color: .clear, location: 0.35), .init(color: .white.opacity(0.22), location: 0.5), .init(color: .clear, location: 0.65)],
+                stops: [.init(color: .clear, location: 0.35), .init(color: .white.opacity(0.1), location: 0.5), .init(color: .clear, location: 0.65)],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
             .offset(x: tilt.width * 3, y: tilt.height * 3)
-            grain.resizable(resizingMode: .tile).opacity(0.14).blendMode(.overlay)
+            grain.resizable(resizingMode: .tile)
+                .opacity(0.4)
+                .blendMode(.overlay)
+                .mask(RadialGradient(colors: [.white, .white.opacity(0.1)], center: .center, startRadius: 30, endRadius: 380))
         }
     }
 
