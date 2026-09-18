@@ -1,11 +1,34 @@
 import SwiftData
 import SwiftUI
 
+// ponytail: three layouts behind a switch so the owner can compare on device (decision 18).
+// Issue #33 deletes the two losers and this enum.
+enum TripsLayout: String, CaseIterable {
+    case carousel, hero, stack
+    var title: String {
+        switch self {
+        case .carousel: "Carousel"
+        case .hero: "Hero + list"
+        case .stack: "Card stack"
+        }
+    }
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
+    @AppStorage("tripsLayout") private var layout = TripsLayout.carousel
     @State private var isAdding = false
     @State private var tripToDelete: Trip?
+
+    // Upcoming trips first, soonest at the front. Undated and past trips after, newest first.
+    private var orderedTrips: [Trip] {
+        let today = Calendar.current.startOfDay(for: .now)
+        let upcoming = trips.filter { ($0.endDate ?? $0.startDate ?? .distantPast) >= today }
+            .sorted { ($0.startDate ?? .distantFuture) < ($1.startDate ?? .distantFuture) }
+        let rest = trips.filter { !upcoming.contains($0) }
+        return upcoming + rest
+    }
 
     var body: some View {
         NavigationStack {
@@ -17,29 +40,21 @@ struct ContentView: View {
                         description: Text("Tap + to plan your first one.")
                     )
                 } else {
-                    List {
-                        ForEach(trips) { trip in
-                            NavigationLink(value: trip) {
-                                HStack {
-                                    Text(trip.name)
-                                    Spacer()
-                                    if trip.isReturnComplete {
-                                        Image(systemName: "checkmark.seal.fill")
-                                            .foregroundStyle(Color.accentColor)
-                                            .accessibilityLabel("Trip complete")
-                                    }
-                                }
-                            }
-                        }
-                        .onDelete { offsets in
-                            tripToDelete = offsets.first.map { trips[$0] }
-                        }
+                    switch layout {
+                    case .carousel: carousel
+                    case .hero: hero
+                    case .stack: stack
                     }
                 }
             }
             .navigationTitle("Trips")
             .navigationDestination(for: Trip.self) { TripDetailView(trip: $0) }
             .toolbar {
+                Menu("Layout", systemImage: "rectangle.3.group") {
+                    Picker("Layout", selection: $layout) {
+                        ForEach(TripsLayout.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                }
                 Button("Add trip", systemImage: "plus") { isAdding = true }
             }
             .sheet(isPresented: $isAdding) { TripForm() }
@@ -53,9 +68,126 @@ struct ContentView: View {
                     if let trip = tripToDelete { context.delete(trip) }
                 }
             } message: {
-                Text("Its bags, items and checks go with it.")
+                Text("Its bags and items go with it.")
             }
         }
+    }
+
+    // MARK: Layout 1. Horizontal paging, one card centred, like Wallet passes.
+    private var carousel: some View {
+        ScrollView(.horizontal) {
+            LazyHStack(spacing: 16) {
+                ForEach(orderedTrips) { trip in
+                    card(trip)
+                        .containerRelativeFrame(.horizontal)
+                }
+            }
+            .scrollTargetLayout()
+        }
+        .contentMargins(.horizontal, 24, for: .scrollContent)
+        .scrollTargetBehavior(.viewAligned)
+        .scrollIndicators(.hidden)
+    }
+
+    // MARK: Layout 2. The next trip is a big card, the rest are compact rows.
+    private var hero: some View {
+        List {
+            if let next = orderedTrips.first {
+                card(next)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
+            if orderedTrips.count > 1 {
+                Section("Other trips") {
+                    ForEach(orderedTrips.dropFirst()) { trip in
+                        NavigationLink(value: trip) {
+                            HStack {
+                                Text(trip.name)
+                                Spacer()
+                                if trip.isReturnComplete {
+                                    Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.accentColor)
+                                }
+                            }
+                        }
+                        .swipeActions {
+                            Button("Delete", systemImage: "trash", role: .destructive) { tripToDelete = trip }
+                        }
+                    }
+                }
+            }
+        }
+        .listStyle(.plain)
+    }
+
+    // MARK: Layout 3. Every trip is a tall card in a vertical stack.
+    private var stack: some View {
+        ScrollView {
+            LazyVStack(spacing: 16) {
+                ForEach(orderedTrips) { card($0) }
+            }
+            .padding()
+        }
+    }
+
+    private func card(_ trip: Trip) -> some View {
+        NavigationLink(value: trip) { TripCard(trip: trip) }
+            .buttonStyle(.plain)
+            .contextMenu {
+                Button("Delete", systemImage: "trash", role: .destructive) { tripToDelete = trip }
+            }
+    }
+}
+
+// One trip as a card: name, dates, a collage of what is packed, counts, return state.
+private struct TripCard: View {
+    let trip: Trip
+
+    private var collage: [String] {
+        var seen: [String] = []
+        for emoji in trip.items.sorted(by: { $0.addedAt < $1.addedAt }).map(\.emoji) where !seen.contains(emoji) {
+            seen.append(emoji)
+        }
+        return Array(seen.prefix(12))
+    }
+
+    private var dates: String? {
+        guard let start = trip.startDate else { return nil }
+        let range = trip.endDate.map { start..<$0 }
+        return range.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? start.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(trip.name).font(.title2.bold())
+                Spacer()
+                if trip.isReturnComplete {
+                    Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.accentColor)
+                        .accessibilityLabel("Trip complete")
+                }
+            }
+            if let dates {
+                Text(dates).font(.subheadline).foregroundStyle(.secondary)
+            }
+            if collage.isEmpty {
+                Text("Nothing packed yet").font(.subheadline).foregroundStyle(.secondary)
+            } else {
+                Text(collage.joined(separator: " ")).font(.title)
+            }
+            HStack {
+                Text("\(trip.bags.count) bags · \(trip.items.count) items")
+                Spacer()
+                if trip.hasStartedReturn {
+                    Text("Home \(trip.returnConfirmedCount) / \(trip.returnExpected.count)").monospacedDigit()
+                }
+            }
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
+        .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(.quaternary))
     }
 }
 
@@ -86,12 +218,11 @@ private struct TripForm: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        let trip = Trip(
+                        context.insert(Trip(
                             name: trimmedName,
                             startDate: hasDates ? startDate : nil,
                             endDate: hasDates ? endDate : nil
-                        )
-                        context.insert(trip)
+                        ))
                         dismiss()
                     }
                     .disabled(trimmedName.isEmpty)
