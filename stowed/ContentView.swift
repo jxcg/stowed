@@ -1,9 +1,16 @@
 import SwiftData
 import SwiftUI
 
+// Two ways to see your trips (decision 22): a scrolling stack, or a pile you swipe through.
+enum TripsView: String, CaseIterable {
+    case stack, deck
+    var title: String { self == .stack ? "Stack" : "Deck" }
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
+    @AppStorage("tripsView") private var view = TripsView.stack
     @State private var isAdding = false
     @State private var tripToDelete: Trip?
 
@@ -25,6 +32,8 @@ struct ContentView: View {
                         systemImage: "suitcase",
                         description: Text("Tap + to plan your first one.")
                     )
+                } else if view == .deck {
+                    DeckView(trips: orderedTrips) { card($0) }
                 } else {
                     stack
                 }
@@ -32,6 +41,11 @@ struct ContentView: View {
             .navigationTitle("Trips")
             .navigationDestination(for: Trip.self) { TripDetailView(trip: $0) }
             .toolbar {
+                Menu("More", systemImage: "ellipsis") {
+                    Picker("View", selection: $view) {
+                        ForEach(TripsView.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                }
                 Button("Add trip", systemImage: "plus") { isAdding = true }
             }
             .sheet(isPresented: $isAdding) { TripForm() }
