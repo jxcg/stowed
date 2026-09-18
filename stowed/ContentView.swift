@@ -164,12 +164,12 @@ private struct TripCard: View {
         .accessibilityElement(children: .combine)
     }
 
-    // Single hue radial, a sheen that follows the tilt, a faint shimmer, a lattice, then grain
-    // masked so it is heaviest in the middle.
+    // Single hue radial, the trip's texture, a sheen that follows the tilt, a faint shimmer,
+    // then grain masked so it is heaviest in the middle.
     private var art: some View {
         ZStack {
             RadialGradient(colors: [palette.centre, palette.edge], center: .center, startRadius: 0, endRadius: 440)
-            lattice.resizable(resizingMode: .tile).opacity(0.07).blendMode(.overlay)
+            CardTextureView(trip: trip)
             RadialGradient(colors: [.white.opacity(0.16), .clear], center: .topLeading, startRadius: 0, endRadius: 360)
                 .offset(tilt)
             LinearGradient(
@@ -189,7 +189,7 @@ private struct TripCard: View {
                     .blendMode(.overlay)
             }
             grain.resizable(resizingMode: .tile)
-                .opacity(0.4)
+                .opacity(0.3)
                 .blendMode(.overlay)
                 .mask(RadialGradient(colors: [.white, .white.opacity(0.1)], center: .center, startRadius: 30, endRadius: 380))
         }
@@ -200,17 +200,13 @@ private struct TripCard: View {
             Text(initial).font(.system(.title2, design: .serif, weight: .bold))
             Text(trip.cardSuit.glyph).font(.footnote)
         }
-        .padding(.horizontal, 26)
-        .padding(.vertical, 26)
+        .padding(.horizontal, 36)
+        .padding(.vertical, 38)
     }
 }
 
-// Tiny greyscale tiles, made once. `grain` is random noise; `lattice` is a diamond mesh.
+// Film grain: one tiny random-noise tile, made once and tiled across the card.
 private let grain = tile(size: 96) { _, _ in UInt8.random(in: 0...255) }
-private let lattice = tile(size: 24) { x, y in
-    let onDiagonal = abs(x - y) <= 1 || abs(x + y - 23) <= 1
-    return onDiagonal ? 255 : 0
-}
 
 private func tile(size: Int, pixel: (Int, Int) -> UInt8) -> Image {
     let pixels = (0..<size * size).map { pixel($0 % size, $0 / size) }

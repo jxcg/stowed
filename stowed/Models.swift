@@ -13,21 +13,30 @@ final class Trip {
     // adding a palette later is a new case, not a migration. Defaults are what old rows get.
     var palette: String = CardPalette.oxblood.rawValue
     var suit: String = CardSuit.spade.rawValue
+    var texture: String = CardTexture.scatter.rawValue
     @Relationship(deleteRule: .cascade, inverse: \Bag.trip) var bags: [Bag] = []
 
     init(name: String, startDate: Date? = nil, endDate: Date? = nil, createdAt: Date = .now,
          palette: CardPalette = CardPalette.allCases.randomElement()!,
-         suit: CardSuit = CardSuit.allCases.randomElement()!) {
+         suit: CardSuit = CardSuit.allCases.randomElement()!,
+         texture: CardTexture = CardTexture.allCases.randomElement()!) {
         self.name = name
         self.startDate = startDate
         self.endDate = endDate
         self.createdAt = createdAt
         self.palette = palette.rawValue
         self.suit = suit.rawValue
+        self.texture = texture.rawValue
     }
 
     var cardPalette: CardPalette { CardPalette(rawValue: palette) ?? .oxblood }
     var cardSuit: CardSuit { CardSuit(rawValue: suit) ?? .spade }
+    var cardTexture: CardTexture { CardTexture(rawValue: texture) ?? .scatter }
+
+    // Stable across launches: String.hashValue is not, so sum the scalars instead.
+    var textureSeed: UInt64 {
+        name.unicodeScalars.reduce(UInt64(createdAt.timeIntervalSince1970)) { $0 &* 31 &+ UInt64($1.value) }
+    }
 
     var items: [Item] { bags.flatMap(\.items) }
 
