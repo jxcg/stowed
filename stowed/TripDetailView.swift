@@ -7,10 +7,13 @@ struct TripDetailView: View {
     @State private var bagToEdit: Bag?
     @State private var isAdding = false
     @State private var bagToDelete: Bag?
+    @State private var query = ""
 
     var body: some View {
         Group {
-            if trip.bags.isEmpty {
+            if !query.isEmpty {
+                searchResults
+            } else if trip.bags.isEmpty {
                 ContentUnavailableView(
                     "No bags yet",
                     systemImage: "bag",
@@ -41,6 +44,7 @@ struct TripDetailView: View {
             }
         }
         .navigationTitle(trip.name)
+        .searchable(text: $query, prompt: "Find an item")
         .navigationDestination(for: Bag.self) { BagDetailView(bag: $0) }
         .navigationDestination(for: CheckpointKind.self) { CheckView(trip: trip, kind: $0) }
         .toolbar {
@@ -63,6 +67,27 @@ struct TripDetailView: View {
 }
 
 private extension TripDetailView {
+    /// The bag is the answer, so it gets the bold slot. Tapping a result opens that bag.
+    @ViewBuilder var searchResults: some View {
+        let matches = trip.items(matching: query)
+            .sorted { ($0.bag?.name ?? "", $0.name) < ($1.bag?.name ?? "", $1.name) }
+        if matches.isEmpty {
+            ContentUnavailableView.search(text: query)
+        } else {
+            List(matches) { item in
+                if let bag = item.bag {
+                    NavigationLink(value: bag) {
+                        HStack {
+                            Text("\(item.emoji) \(item.name)")
+                            Spacer()
+                            Text("\(bag.emoji) \(bag.name)").fontWeight(.semibold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     func checkRow(_ kind: CheckpointKind) -> some View {
         let checkpoint = trip.checkpoint(kind)
         return NavigationLink(value: kind) {

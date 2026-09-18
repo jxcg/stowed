@@ -249,3 +249,18 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
         #expect(try context.fetchCount(FetchDescriptor<Confirmation>()) == 0)
     }
 }
+
+@Suite struct Search {
+    @Test func partialCaseInsensitiveMatchReturnsContainingBag() throws {
+        let context = try makeContext()
+        let (trip, bag) = makeTrip(items: 0, in: context)
+        bag.items.append(Item(name: "Phone Charger", emoji: "🔌", addedAt: t0))
+        bag.items.append(Item(name: "Socks", emoji: "🧦", addedAt: t0))
+
+        let found = trip.items(matching: "char")
+        #expect(found.map(\.name) == ["Phone Charger"])
+        #expect(found.first?.bag === bag)
+        #expect(trip.items(matching: "ZZZ").isEmpty)
+        #expect(Trip(name: "Empty").items(matching: "a").isEmpty)
+    }
+}

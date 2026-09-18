@@ -24,6 +24,11 @@ final class Trip {
 
     var items: [Item] { bags.flatMap(\.items) }
 
+    /// Case- and diacritic-insensitive substring match, scoped to this trip (SPEC §3.4).
+    func items(matching query: String) -> [Item] {
+        items.filter { $0.name.localizedStandardContains(query) }
+    }
+
     /// Both checkpoints conceptually exist from trip creation (SPEC decision 7). They are
     /// materialised on first access because SwiftData does not reliably persist relationships
     /// assigned inside an initialiser, before the object is in a context.
