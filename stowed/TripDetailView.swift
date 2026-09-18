@@ -8,6 +8,7 @@ struct TripDetailView: View {
     @State private var isAdding = false
     @State private var bagToDelete: Bag?
     @State private var query = ""
+    @State private var isStartingReturn = false
 
     var body: some View {
         Group {
@@ -21,6 +22,26 @@ struct TripDetailView: View {
                 )
             } else {
                 List {
+                    Section("Return") {
+                        if trip.hasStartedReturn {
+                            NavigationLink {
+                                ReturnView(trip: trip)
+                            } label: {
+                                HStack {
+                                    Text("Return check")
+                                    Spacer()
+                                    Text("\(trip.returnConfirmedCount) / \(trip.returnExpected.count)")
+                                        .foregroundStyle(.secondary).monospacedDigit()
+                                    if trip.isReturnComplete {
+                                        Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.accentColor)
+                                            .accessibilityLabel("Complete")
+                                    }
+                                }
+                            }
+                        } else {
+                            Button("Start return check", systemImage: "airplane.arrival") { isStartingReturn = true }
+                        }
+                    }
                     Section("Bags") {
                         ForEach(trip.bags) { bag in
                             NavigationLink(value: bag) {
@@ -47,6 +68,13 @@ struct TripDetailView: View {
             Button("Add bag", systemImage: "plus") { isAdding = true }
         }
         .sheet(isPresented: $isAdding) { BagForm(trip: trip, bag: nil) }
+        // Re-import keeps every item; fresh expects nothing until you add or un-grey (decision 15).
+        .confirmationDialog("Start the return check", isPresented: $isStartingReturn, titleVisibility: .visible) {
+            Button("Re-import everything I packed") { trip.startReturn(reimport: true) }
+            Button("Start fresh") { trip.startReturn(reimport: false) }
+        } message: {
+            Text("Re-import expects everything you packed to come home. Start fresh if it was all lost or replaced.")
+        }
         .sheet(item: $bagToEdit) { BagForm(trip: trip, bag: $0) }
         .confirmationDialog(
             "Delete \(bagToDelete?.name ?? "bag")?",
