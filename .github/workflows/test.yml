@@ -1,0 +1,25 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    # ponytail: preview label. If GitHub drops it, use macos-26 and xcode-select the Xcode_27 app.
+    runs-on: xcode-27
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available | grep "iPhone 17" || true
+      - name: Test
+        run: |
+          xcodebuild \
+            -scheme stowed \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -skipPackagePluginValidation \
+            test
