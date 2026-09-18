@@ -77,16 +77,7 @@ private struct BagForm: View {
         NavigationStack {
             Form {
                 HStack {
-                    TextField(EmojiGuess.bagFallback, text: $emoji)
-                        .frame(width: 44)
-                        .multilineTextAlignment(.center)
-                        .onChange(of: emoji) { _, new in
-                            // Keep one grapheme so the field never holds a word.
-                            let last = String(new.suffix(1))
-                            if new != last { emoji = last }
-                            if !last.isEmpty { userChoseEmoji = true }
-                        }
-                        .accessibilityLabel("Emoji")
+                    EmojiField(emoji: $emoji, placeholder: EmojiGuess.bagFallback, userChoseEmoji: $userChoseEmoji)
                     TextField("Bag name", text: $name)
                         .onChange(of: name) { _, new in
                             if !userChoseEmoji { emoji = EmojiGuess.guess(for: new, fallback: "") }
