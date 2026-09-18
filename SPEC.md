@@ -112,9 +112,11 @@ where they conflict.
 18. **Trips page: three layouts behind a runtime switch**, temporarily, so the owner can
     compare on device: a horizontal card carousel, a hero card with a compact past list, and
     a vertical stack of cards. Two get deleted once one is chosen.
-19. **Schema v2 is a clean break.** No versioned migration from v0.1.0's store; the only
-    store with data is the owner's simulator. Versioned schemas start at the first TestFlight
-    build.
+19. **Schema changes must migrate in place.** Every new non-optional attribute carries a
+    default value so SwiftData's lightweight migration can fill existing rows. A test guards
+    this. Learned the hard way on 2026-09-18: `Item.note` without a default made the store
+    fail to load on top of a v0.1.0 store, and the app ran with no store at all, silently
+    dropping every insert. Versioned schemas start at the first TestFlight build.
 
 ### Data scope (first version)
 

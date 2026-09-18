@@ -74,10 +74,12 @@ final class Item {
     var name: String
     var emoji: String
     var addedAt: Date
-    var quantity: Int
-    var note: String
+    // Defaults here are load-bearing: they let old stores migrate. A mandatory attribute
+    // with no default makes the store fail to load and the app runs with no store at all.
+    var quantity: Int = 1
+    var note: String = ""
     // Return side (decisions 15, 16). Absent returnConfirmedAt = not verified yet, never "missing".
-    var returning: Bool
+    var returning: Bool = true
     var returnQuantity: Int?
     var returnConfirmedAt: Date?
     var bag: Bag?
