@@ -189,3 +189,16 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
         #expect(item.quantity == 3)
     }
 }
+
+@Suite struct Bags {
+    @Test func addingAnExistingNameBumpsQuantity() throws {
+        let context = try makeContext()
+        let (_, bag) = makeTrip(items: 0, in: context)
+        bag.add("T-shirt", emoji: "👕")
+        bag.add("t-shirt", emoji: "👕")
+        bag.add("Socks", emoji: "🧦")
+
+        #expect(bag.items.count == 2)
+        #expect(bag.items.first { $0.name == "T-shirt" }?.quantity == 2)
+    }
+}
