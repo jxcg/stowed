@@ -208,10 +208,12 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
     // lightweight migration fail and the store never loads. Every non-optional attribute
     // added after v0.1.0 must carry a default.
     @Test func newMandatoryAttributesHaveDefaults() throws {
-        let item = try #require(Schema([Item.self]).entities.first { $0.name == "Item" })
-        for name in ["quantity", "note", "returning"] {
-            let attribute = try #require(item.attributesByName[name])
-            #expect(attribute.defaultValue != nil, "\(name) has no default, old stores cannot migrate")
+        let schema = Schema([Trip.self])
+        let added = [("Item", "quantity"), ("Item", "note"), ("Item", "returning"), ("Trip", "hue")]
+        for (entityName, name) in added {
+            let entity = try #require(schema.entities.first { $0.name == entityName })
+            let attribute = try #require(entity.attributesByName[name])
+            #expect(attribute.defaultValue != nil, "\(entityName).\(name) has no default, old stores cannot migrate")
         }
     }
 }

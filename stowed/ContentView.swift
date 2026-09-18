@@ -69,7 +69,8 @@ struct ContentView: View {
     }
 }
 
-// One trip as a card: name, dates, a collage of what is packed, counts, return state.
+// A playing card (decision 20). Gradient back from the trip's hue, paper face with a double
+// rule, the initial in two corners like a real card, the packed emoji as the pips.
 private struct TripCard: View {
     let trip: Trip
 
@@ -85,38 +86,76 @@ private struct TripCard: View {
         return range.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? start.formatted(date: .abbreviated, time: .omitted)
     }
 
+    private var light: Color { Color(hue: trip.hue, saturation: 0.6, brightness: 0.9) }
+    private var dark: Color { Color(hue: (trip.hue + 0.1).truncatingRemainder(dividingBy: 1), saturation: 0.8, brightness: 0.55) }
+    private var initial: String { String(trip.name.prefix(1)).uppercased() }
+    private var pip: String { collage.first ?? "✈️" }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(trip.name).font(.title2.bold())
-                Spacer()
-                if trip.isReturnComplete {
-                    Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.accentColor)
-                        .accessibilityLabel("Trip complete")
+        ZStack {
+            // Back: gradient plus a soft sheen, like light on a laminated card.
+            RoundedRectangle(cornerRadius: 28)
+                .fill(LinearGradient(colors: [light, dark], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 28)
+                        .fill(RadialGradient(colors: [.white.opacity(0.35), .clear], center: .topLeading, startRadius: 0, endRadius: 360))
+                )
+            // Face: paper panel with the classic double rule.
+            RoundedRectangle(cornerRadius: 18)
+                .fill(.background.opacity(0.94))
+                .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(.secondary.opacity(0.35)).padding(6))
+                .padding(16)
+
+            VStack(spacing: 12) {
+                Text(trip.name)
+                    .font(.system(.title, design: .serif, weight: .bold))
+                    .multilineTextAlignment(.center)
+                if let dates {
+                    Text(dates).font(.system(.subheadline, design: .serif)).foregroundStyle(.secondary)
                 }
-            }
-            if let dates {
-                Text(dates).font(.subheadline).foregroundStyle(.secondary)
-            }
-            if collage.isEmpty {
-                Text("Nothing packed yet").font(.subheadline).foregroundStyle(.secondary)
-            } else {
-                Text(collage.joined(separator: " ")).font(.title)
-            }
-            HStack {
-                Text("\(trip.bags.count) bags · \(trip.items.count) items")
-                Spacer()
-                if trip.hasStartedReturn {
-                    Text("Home \(trip.returnConfirmedCount) / \(trip.returnExpected.count)").monospacedDigit()
+                Spacer(minLength: 8)
+                if collage.isEmpty {
+                    Text("Nothing packed yet").font(.subheadline).foregroundStyle(.secondary)
+                } else {
+                    Text(collage.joined(separator: "  "))
+                        .font(.system(size: 34))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(6)
                 }
+                Spacer(minLength: 8)
+                HStack {
+                    Text("\(trip.bags.count) bags · \(trip.items.count) items")
+                    Spacer()
+                    if trip.isReturnComplete {
+                        Label("Home", systemImage: "checkmark.seal.fill").foregroundStyle(Color.accentColor)
+                            .accessibilityLabel("Trip complete")
+                    } else if trip.hasStartedReturn {
+                        Text("Home \(trip.returnConfirmedCount) / \(trip.returnExpected.count)").monospacedDigit()
+                    }
+                }
+                .font(.footnote)
+                .foregroundStyle(.secondary)
             }
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+            .padding(40)
+
+            cornerMark
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            cornerMark
+                .rotationEffect(.degrees(180))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
-        .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(.quaternary))
+        .aspectRatio(0.72, contentMode: .fit)
+        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var cornerMark: some View {
+        VStack(spacing: 0) {
+            Text(initial).font(.system(.title2, design: .serif, weight: .bold))
+            Text(pip).font(.caption)
+        }
+        .padding(.horizontal, 30)
+        .padding(.vertical, 28)
     }
 }
 

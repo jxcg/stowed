@@ -9,13 +9,18 @@ final class Trip {
     var createdAt: Date
     // nil = return check not started yet (decision 15).
     var returnStartedAt: Date?
+    // Card colour, 0..<1 on the colour wheel. Picked once at creation and kept (decision 20).
+    // Default is what old rows get when the store migrates.
+    var hue: Double = 0
     @Relationship(deleteRule: .cascade, inverse: \Bag.trip) var bags: [Bag] = []
 
-    init(name: String, startDate: Date? = nil, endDate: Date? = nil, createdAt: Date = .now) {
+    init(name: String, startDate: Date? = nil, endDate: Date? = nil, createdAt: Date = .now,
+         hue: Double = .random(in: 0..<1)) {
         self.name = name
         self.startDate = startDate
         self.endDate = endDate
         self.createdAt = createdAt
+        self.hue = hue
     }
 
     var items: [Item] { bags.flatMap(\.items) }
