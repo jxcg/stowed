@@ -65,6 +65,18 @@ reversible swipe and shows greyscale; rename + move-between-bags in scope, reord
 - No SwiftUI previews until the design pass; accessibility labels on any custom control.
 - Trip list sorted by createdAt, newest first.
 
+## Round 2 (2026-09-18): the owner's rewrite
+
+v0.1.0 is the stable PoC. Round 2 is SPEC decisions 12–19: no outbound check, no locks,
+quantity + note, return as a flag per item, tile return screen, three trips-page layouts
+behind a switch. Five tickets, each branched from `main`, **no stacking**:
+
+1. Model v2 + tests (deletes Checkpoint and Confirmation, clean schema break).
+2. Bag screen rows with stepper and note.
+3. Return flow: start, tile grid, not returning, quantity edit, completion seal.
+4. Trips page: carousel, hero + list, card stack behind a Layout menu.
+5. Delete the two losing layouts.
+
 ## Open questions
 
 - Everything in SPEC §5 stays open.

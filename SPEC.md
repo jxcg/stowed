@@ -84,6 +84,38 @@ am bringing them back."*
     (confirmations travel with it). **Out:** manual reordering; trip dates shown on the list
     (list sorts by creation, newest first).
 
+### Decisions taken 2026-09-18 (third round, after v0.1.0 shipped)
+
+The owner walked through the journey and rewrote it. These supersede earlier decisions
+where they conflict.
+
+12. **There is no outbound check.** Adding an item to a bag means it is packed. No ticking
+    before departure, no Finish. The bag list *is* the outbound record. Supersedes decisions
+    2, 6, 7 and 8 as far as outbound is concerned.
+13. **Nothing locks.** Every list stays editable for the life of the trip. "I could find
+    something later on" beats "frozen history". Supersedes decision 6.
+14. **Quantity and note on an item.** "T-shirt" with quantity 8 and a note like "1x white,
+    3x black, 4x silver". Supersedes decision 3. The stepper on the row is how quantity is
+    edited.
+15. **Return is a flag per item, not a second list.** Each item carries `returning`
+    (default true). Starting the return check offers **Re-import everything I packed**
+    (leaves every flag on) or **Start fresh** (turns every flag off, for "everything got
+    lost or replaced"). Items added after the return started are returning by default.
+    "Not returning" turns the flag off and greys the tile. The return check expects flagged
+    items only. Supersedes the mechanics of decisions 4 and 5; the meaning is unchanged.
+16. **Partial return edits the number.** Only 2 of 3 T-shirts came home: set the return
+    quantity to 2 on the return screen and tick it. `returnQuantity` is nil until edited, so
+    the bag list still shows what was packed.
+17. **Screens.** Bag screen is rows: emoji, name, note caption, stepper on the trailing edge,
+    quick-add row at the bottom. Return screen is an emoji tile grid: tap ticks, long press
+    for not-returning and quantity. `DESIGN.md` still owns the visual language.
+18. **Trips page: three layouts behind a runtime switch**, temporarily, so the owner can
+    compare on device: a horizontal card carousel, a hero card with a compact past list, and
+    a vertical stack of cards. Two get deleted once one is chosen.
+19. **Schema v2 is a clean break.** No versioned migration from v0.1.0's store; the only
+    store with data is the owner's simulator. Versioned schemas start at the first TestFlight
+    build.
+
 ### Data scope (first version)
 
 On-device only. One user, local persistence, no account, no network.
@@ -92,66 +124,42 @@ On-device only. One user, local persistence, no account, no network.
 
 ## 3. Design
 
-### 3.1 Why check state cannot live on the item
+### 3.1 Why the return record lives on the item now
 
-Two confirmed rules together — "outbound must not auto-confirm return" and "unchecked ≠
-missing" — rule out an `isPacked: Bool` on an item. A single boolean cannot hold two
-independent verification passes, and `false` would conflate *not yet looked at* with *known
-gone*.
-
-So a **confirmation is its own record**, keyed by (item, checkpoint), and **the absence of a
-record is the unverified state**. There is no stored value that could drift into meaning
-"missing".
+With the outbound check gone (decision 12) there is exactly one verification pass. A single
+nullable date per pass on the item, `returnConfirmedAt`, is the record: present means
+verified, absent means not yet verified. Nothing can drift into meaning "missing". An arrival
+check later is one more nullable date, not a redesign.
 
 ### 3.2 Model
 
-Persistence is **SwiftData** — native to the platform, no third-party dependencies, and
-upgradable to CloudKit sync later by configuration rather than rewrite.
+Persistence is **SwiftData**, no third-party dependencies.
 
 ```
-Trip          name, startDate?, endDate?, createdAt   → bags, checkpoints
-Bag           name, emoji                             → items           (belongs to Trip)
-Item          name, emoji, addedAt, notReturningAt?   → confirmations   (belongs to Bag)
-Checkpoint    kind (.outbound | .return), closedAt?             (belongs to Trip)
-Confirmation  confirmedAt                             (item × checkpoint)
+Trip   name, startDate?, endDate?, createdAt, returnStartedAt?      → bags
+Bag    name, emoji                                                  → items   (belongs to Trip)
+Item   name, emoji, quantity, note, addedAt,
+       returning, returnQuantity?, returnConfirmedAt?                        (belongs to Bag)
 ```
 
-Two nullable dates — `Checkpoint.closedAt` and `Item.notReturningAt` — carry decisions 2, 4 and
-5. No extra entity and no snapshot table are required.
+`returnStartedAt` says whether the return check has begun. `returning`, `returnQuantity`
+and `returnConfirmedAt` carry decisions 15 and 16. Cascade deletes run from `Trip` downward.
+Dates are stored as absolute time (UTC) and formatted only for display.
 
-### 3.3 Which items a checkpoint expects
+### 3.3 What the return check expects
 
-Base set, both kinds:
+Items where `returning == true`. Progress = flagged items with `returnConfirmedAt` set, over
+flagged items. Computed live, never stored. Complete when every flagged item is ticked and
+there is at least one. Removing an item never breaks completion: it leaves numerator and
+denominator together.
 
-- **Closed** (`closedAt != nil`) — items where `addedAt <= closedAt`. History is frozen: a
-  souvenir added later is excluded.
-- **Open** (`closedAt == nil`) — all current items.
+### 3.4 Screens
 
-Then, **for `.return` only** (decision 5), remove items marked not-returning: while open,
-any marked item; once closed, items where `notReturningAt <= closedAt`. Marking something
-after a check closed never rewrites what already happened. Outbound ignores the mark.
-
-**Progress** = confirmations whose item is still in the expected set, over the expected count.
-It is computed live and never stored, so it cannot go stale.
-
-**Removing an item can never reopen a check.** It leaves the numerator and denominator
-together: 10/10 becomes 9/9 (still complete), and 9/10 becomes 9/9 (now complete). This is
-arithmetic, not a policy choice.
-
-Adding the arrival checkpoint later is a new enum case, not a behavioural migration.
-
-Cascade deletes run from `Trip` downward. Dates are stored as absolute time (UTC) and
-formatted only for display.
-
-### 3.4 Screens for the first journey
-
-Trip list → trip detail (bags, per-checkpoint progress) → bag detail (items) → check flow
-(outbound / return, with an explicit **finish** action that sets `closedAt`) → search across
+Trips page (three layouts, decision 18) → trip: bags plus a Return section → bag: rows with
+stepper and note → return check: tile grid, start with re-import or fresh → search across
 the trip that returns the containing bag.
 
-The visual suitcase/bag view is confirmed scope but is **blocked on `DESIGN.md`**, which does
-not yet exist. The first version ships the list view so the journey is walkable end to end;
-the visual view follows once design guidance exists.
+The visual suitcase/bag view is confirmed scope but remains **blocked on `DESIGN.md`**.
 
 ---
 
@@ -176,8 +184,6 @@ Not needed for the first version, and **not** to be chosen silently:
 - Arrival check (requested as a possibility; deferred, not rejected).
 - Copying previous trips, reusable templates, an item catalogue.
 - The exact item-entry method beyond v1's name field + guessed emoji (decision 9).
-- Quantities (excluded from v1; the question of how partial recovery would be expressed
-  remains open).
 - Accounts, syncing, sharing, offline requirements, monetisation.
 - The precise first-release scope.
 - Real bundle identifier (currently the `devplaceholder.…` template value).
@@ -209,23 +215,19 @@ Known issues to address before feature work:
 
 ## 7. Verification approach
 
-Unit tests using **Swift Testing**, in a test target that does not yet exist. The logic worth
-testing is the checkpoint semantics, because that is where the confirmed rules are easy to
-break:
+Unit tests using **Swift Testing** on an in-memory container. The logic worth testing is the
+return semantics:
 
-- confirming an item outbound leaves its return state unverified;
-- closing outbound, then adding an item → outbound count unchanged, item expected by return;
-- adding an item while outbound is still open → it joins outbound;
-- marking "not returning" → excluded from the open return check, still present in the closed
-  outbound check and in an open outbound check;
-- marking "not returning", then closing return → still excluded from the closed return;
-  marking after return closed → still included (frozen);
-- un-tick while open removes the confirmation; un-tick after close is refused;
-- moving an item to another bag keeps its confirmations;
-- removing a confirmed item from a closed, complete check → it stays complete;
-- search returns the containing bag; cascade delete removes orphaned confirmations.
+- ticking an item sets `returnConfirmedAt`; unticking clears it; no lock ever refuses it;
+- start fresh → every existing item is not returning, return expects nothing;
+- re-import → return expects everything;
+- an item added after return start is expected;
+- "not returning" → excluded, still present in its bag with its packed quantity;
+- editing the return quantity leaves `quantity` untouched;
+- removing a ticked item from a complete return keeps it complete;
+- search returns the containing bag; deleting a bag or trip cascades.
 
-Unhappy paths: empty trip, bag with no items, item deleted mid-check.
+Unhappy paths: empty trip, bag with no items, item deleted mid-check, quantity never below 1.
 
 Then build and run on the iPhone 17 simulator and walk the full journey by hand.
 
@@ -248,4 +250,14 @@ Not started. One item at a time, each tracked as its own issue.
 | 8 | Return check, "not returning" marking, completion state | Completes the first journey |
 | 9 | Visual suitcase/bag view | **Blocked on `DESIGN.md`** |
 
-Items 0–8 constitute the first working version.
+Items 0–8 shipped as **v0.1.0** on 2026-09-18.
+
+Round 2 (decisions 12–19), each its own issue, each branched from `main`:
+
+| # | Work |
+|---|------|
+| 10 | Model v2: drop checkpoints and confirmations, add quantity, note, returning, return fields, tests |
+| 11 | Bag screen: rows with stepper and note, edit sheet |
+| 12 | Return flow: start (re-import or fresh), tile check screen, not returning, quantity edit, completion |
+| 13 | Trips page: three layouts behind a runtime switch |
+| 14 | Delete the two losing layouts once the owner picks |
