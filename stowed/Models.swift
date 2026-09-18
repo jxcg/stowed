@@ -58,6 +58,15 @@ final class Bag {
         self.name = name
         self.emoji = emoji
     }
+
+    // Typing "T-shirt" again bumps the count instead of making a second row (decision 14).
+    func add(_ name: String, emoji: String) {
+        if let existing = items.first(where: { $0.name.localizedCaseInsensitiveCompare(name) == .orderedSame }) {
+            existing.changeQuantity(by: 1)
+        } else {
+            items.append(Item(name: name, emoji: emoji))
+        }
+    }
 }
 
 @Model

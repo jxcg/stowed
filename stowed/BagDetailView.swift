@@ -1,6 +1,7 @@
 import SwiftData
 import SwiftUI
 
+// The bag list IS the packed list (decision 12). Rows with a stepper and a note (decision 17).
 struct BagDetailView: View {
     @Environment(\.modelContext) private var context
     let bag: Bag
@@ -22,27 +23,15 @@ struct BagDetailView: View {
                 .listRowSeparator(.hidden)
             } else {
                 ForEach(sortedItems) { item in
-                    Button {
-                        itemToEdit = item
-                    } label: {
-                        HStack {
-                            Text(item.emoji).saturation(item.returning ? 1 : 0)
-                            Text(item.name)
-                            if !item.returning {
-                                Spacer()
-                                Text("Not returning").font(.caption).foregroundStyle(.secondary)
+                    ItemRow(item: item) { itemToEdit = item }
+                        .swipeActions {
+                            Button("Delete", systemImage: "trash", role: .destructive) { context.delete(item) }
+                            if item.returning {
+                                Button("Not returning", systemImage: "arrow.uturn.left.circle") { item.returning = false }
+                            } else {
+                                Button("Returning", systemImage: "arrow.uturn.right.circle") { item.returning = true }
                             }
                         }
-                    }
-                    .tint(item.returning ? .primary : .secondary)
-                    .swipeActions {
-                        Button("Delete", systemImage: "trash", role: .destructive) { context.delete(item) }
-                        if item.returning {
-                            Button("Not returning", systemImage: "arrow.uturn.left.circle") { item.returning = false }
-                        } else {
-                            Button("Returning", systemImage: "arrow.uturn.right.circle") { item.returning = true }
-                        }
-                    }
                 }
             }
 
@@ -64,27 +53,62 @@ struct BagDetailView: View {
 
     private func addItem() {
         guard !trimmedNewName.isEmpty else { return }
-        // addedAt is set to now in Item.init. Load-bearing: it decides which check an item joins.
-        bag.items.append(Item(
-            name: trimmedNewName,
-            emoji: EmojiGuess.guess(for: trimmedNewName, fallback: EmojiGuess.itemFallback)
-        ))
+        // Same name again = +1, not a duplicate row. addedAt is set in Item.init.
+        bag.add(trimmedNewName, emoji: EmojiGuess.guess(for: trimmedNewName, fallback: EmojiGuess.itemFallback))
         newName = ""
         addFieldFocused = true
     }
 }
 
-// Rename, change emoji, or move to another bag in the same trip.
+// emoji | name + note | count | −/+. Tap the text to edit.
+private struct ItemRow: View {
+    let item: Item
+    let onTap: () -> Void
+
+    var body: some View {
+        HStack {
+            Button(action: onTap) {
+                HStack {
+                    Text(item.emoji).saturation(item.returning ? 1 : 0)
+                    VStack(alignment: .leading) {
+                        Text(item.name)
+                        if !item.note.isEmpty {
+                            Text(item.note).font(.caption).foregroundStyle(.secondary)
+                        }
+                        if !item.returning {
+                            Text("Not returning").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .tint(item.returning ? .primary : .secondary)
+
+            Text("\(item.quantity)").monospacedDigit().foregroundStyle(.secondary)
+            Stepper("Quantity", value: Binding(
+                get: { item.quantity },
+                set: { item.quantity = max(1, $0) }
+            ), in: 1...99)
+            .labelsHidden()
+        }
+    }
+}
+
+// Rename, note, emoji, or move to another bag in the same trip.
 private struct ItemForm: View {
     @Environment(\.dismiss) private var dismiss
     let item: Item
     @State private var name: String
+    @State private var note: String
     @State private var emoji: String
     @State private var bag: Bag?
 
     init(item: Item) {
         self.item = item
         _name = State(initialValue: item.name)
+        _note = State(initialValue: item.note)
         _emoji = State(initialValue: item.emoji)
         _bag = State(initialValue: item.bag)
     }
@@ -99,6 +123,7 @@ private struct ItemForm: View {
                     EmojiField(emoji: $emoji, placeholder: EmojiGuess.itemFallback)
                     TextField("Item name", text: $name)
                 }
+                TextField("Note, e.g. 1x white, 3x black", text: $note)
                 if bagsInTrip.count > 1 {
                     Picker("Bag", selection: $bag) {
                         ForEach(bagsInTrip) { candidate in
@@ -114,8 +139,9 @@ private struct ItemForm: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         item.name = trimmedName
+                        item.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
                         item.emoji = emoji.isEmpty ? EmojiGuess.itemFallback : emoji
-                        if let bag, bag !== item.bag { item.bag = bag }   // ticks move with it
+                        if let bag, bag !== item.bag { item.bag = bag }
                         dismiss()
                     }
                     .disabled(trimmedName.isEmpty)
