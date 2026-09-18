@@ -77,11 +77,16 @@ private struct TripForm: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        context.insert(Trip(
+                        let trip = Trip(
                             name: trimmedName,
                             startDate: hasDates ? startDate : nil,
                             endDate: hasDates ? endDate : nil
-                        ))
+                        )
+                        context.insert(trip)
+                        // Both checks exist from trip creation (SPEC decision 7). Done after
+                        // insert, which is the moment SwiftData persists relationships reliably.
+                        _ = trip.checkpoint(.outbound)
+                        _ = trip.checkpoint(.return)
                         dismiss()
                     }
                     .disabled(trimmedName.isEmpty)

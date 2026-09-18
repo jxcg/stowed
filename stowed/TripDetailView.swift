@@ -17,24 +17,32 @@ struct TripDetailView: View {
                     description: Text("Tap + to add a suitcase, backpack, anything.")
                 )
             } else {
-                List(trip.bags) { bag in
-                    NavigationLink(value: bag) {
-                        HStack {
-                            Text(bag.emoji)
-                            Text(bag.name)
-                            Spacer()
-                            Text("\(bag.items.count)").foregroundStyle(.secondary)
-                        }
+                List {
+                    Section("Checks") {
+                        checkRow(.outbound)
                     }
-                    .swipeActions {
-                        Button("Delete", systemImage: "trash", role: .destructive) { bagToDelete = bag }
-                        Button("Rename", systemImage: "pencil") { bagToEdit = bag }
+                    Section("Bags") {
+                        ForEach(trip.bags) { bag in
+                            NavigationLink(value: bag) {
+                                HStack {
+                                    Text(bag.emoji)
+                                    Text(bag.name)
+                                    Spacer()
+                                    Text("\(bag.items.count)").foregroundStyle(.secondary)
+                                }
+                            }
+                            .swipeActions {
+                                Button("Delete", systemImage: "trash", role: .destructive) { bagToDelete = bag }
+                                Button("Rename", systemImage: "pencil") { bagToEdit = bag }
+                            }
+                        }
                     }
                 }
             }
         }
         .navigationTitle(trip.name)
         .navigationDestination(for: Bag.self) { BagDetailView(bag: $0) }
+        .navigationDestination(for: CheckpointKind.self) { CheckView(trip: trip, kind: $0) }
         .toolbar {
             Button("Add bag", systemImage: "plus") { isAdding = true }
         }
@@ -50,6 +58,25 @@ struct TripDetailView: View {
             }
         } message: {
             Text("Its \(bagToDelete?.items.count ?? 0) items go with it.")
+        }
+    }
+}
+
+private extension TripDetailView {
+    func checkRow(_ kind: CheckpointKind) -> some View {
+        let checkpoint = trip.checkpoint(kind)
+        return NavigationLink(value: kind) {
+            HStack {
+                Text(kind.title)
+                Spacer()
+                Text("\(checkpoint.confirmedCount) / \(checkpoint.expectedCount)")
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                if checkpoint.isClosed {
+                    Image(systemName: "lock.fill").foregroundStyle(.secondary)
+                        .accessibilityLabel("Finished")
+                }
+            }
         }
     }
 }
