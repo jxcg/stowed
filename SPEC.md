@@ -118,11 +118,17 @@ where they conflict.
     fail to load on top of a v0.1.0 store, and the app ran with no store at all, silently
     dropping every insert. Versioned schemas start at the first TestFlight build.
 
-20. **Trip cards look like playing cards.** Thin white frame, full-bleed gradient art from a
-    hue picked at random when the trip is created and stored on it, so a card keeps its
-    colour forever; film grain and a shimmer over the art; the trip's initial in two corners,
-    the bottom one rotated; packed emoji as the pips; New York serif for name and marks.
-    User-chosen colours come later.
+20. **Trip cards look like playing cards.** Thin foil frame, one deep colour for the face
+    falling to a darker edge, film grain heaviest in the middle, a faint lattice, a double
+    hairline rule, a small-caps footer with the dates; the trip's initial and suit in two
+    corners, the bottom one rotated; the initial again as a faint monogram in the centre. No
+    emoji on the card: they clash with its formality and live on the bag screens instead. New
+    York serif throughout.
+21. **Card colour and suit are random from a curated set, stored on the trip.** Ten named
+    palettes (oxblood, navy, forest, plum, slate, rust, teal, charcoal, ochre, bordeaux), each
+    a single hue for the face. The frame is the only second colour: a tint of the same hue, or
+    gold foil for the jewel palettes. One of four suits. Both picked at creation and kept;
+    user-chosen palettes come later.
 
 On-device only. One user, local persistence, no account, no network.
 

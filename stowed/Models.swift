@@ -9,19 +9,25 @@ final class Trip {
     var createdAt: Date
     // nil = return check not started yet (decision 15).
     var returnStartedAt: Date?
-    // Card colour, 0..<1 on the colour wheel. Picked once at creation and kept (decision 20).
-    // Default is what old rows get when the store migrates.
-    var hue: Double = 0
+    // Card look, picked once at creation and kept (decisions 20, 21). Stored as raw strings so
+    // adding a palette later is a new case, not a migration. Defaults are what old rows get.
+    var palette: String = CardPalette.oxblood.rawValue
+    var suit: String = CardSuit.spade.rawValue
     @Relationship(deleteRule: .cascade, inverse: \Bag.trip) var bags: [Bag] = []
 
     init(name: String, startDate: Date? = nil, endDate: Date? = nil, createdAt: Date = .now,
-         hue: Double = .random(in: 0..<1)) {
+         palette: CardPalette = CardPalette.allCases.randomElement()!,
+         suit: CardSuit = CardSuit.allCases.randomElement()!) {
         self.name = name
         self.startDate = startDate
         self.endDate = endDate
         self.createdAt = createdAt
-        self.hue = hue
+        self.palette = palette.rawValue
+        self.suit = suit.rawValue
     }
+
+    var cardPalette: CardPalette { CardPalette(rawValue: palette) ?? .oxblood }
+    var cardSuit: CardSuit { CardSuit(rawValue: suit) ?? .spade }
 
     var items: [Item] { bags.flatMap(\.items) }
 
