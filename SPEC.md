@@ -192,24 +192,23 @@ Not needed for the first version, and **not** to be chosen silently:
 
 ---
 
-## 6. Repository state at time of writing
+## 6. Repository state
 
-Repo `jxcg/stowed`, branch `main`, one commit, stock SwiftUI template
-(`ContentView.swift` renders `Text("Hello, world!")`).
+Updated 2026-09-18 after round 2.
 
-Toolchain available: Xcode 27.0, iOS 27.0 SDK, iPhone 17 / 17 Pro / 17e / Air / 18 Pro
-simulators, `gh` authenticated.
+Repo `jxcg/stowed`, branch `main`. `v0.1.0` tags the first walkable version (§8 rows
+0–8). Round 2 (decisions 12–19) is merged on top of it.
 
-Not yet present: `DESIGN.md`, `README.md`, `.gitignore`, a test target, SwiftLint, CI.
+Present: `README.md`, `.gitignore`, `stowedTests` (Swift Testing, 15 tests), shared
+`stowed` scheme, Swift 6 language mode, iPhone-only platforms, CI running the tests on every
+PR (`.github/workflows/test.yml`).
 
-Known issues to address before feature work:
+Not yet present: `DESIGN.md` (owner action, #10), SwiftLint, crash reporting, versioned
+schema migrations (start at the first TestFlight build, decision 19), a real bundle
+identifier.
 
-- `UserInterfaceState.xcuserstate` is tracked in git and should be ignored and untracked.
-- `TARGETED_DEVICE_FAMILY = "1,2,7"` and `SUPPORTED_PLATFORMS` include macOS and visionOS;
-  the brief specifies iPhone.
-- `SWIFT_VERSION = 5.0` under Xcode 27 — move to Swift 6 language mode while there is no
-  code to migrate.
-- `MyApp.swift` should be renamed `StowedApp.swift`.
+Toolchain: Xcode 27.0, iOS 27.0 SDK, iPhone 17 simulator on iOS 27 (the iOS 26.5 one will
+not install the app), `gh` authenticated.
 
 ---
 
