@@ -65,6 +65,15 @@ reversible swipe and shows greyscale; rename + move-between-bags in scope, reord
 - No SwiftUI previews until the design pass; accessibility labels on any custom control.
 - Trip list sorted by createdAt, newest first.
 
+## Round 2 (2026-09-18): tiles, quantities, editable checks
+
+v0.1.0 is the stable PoC. This round is SPEC decisions 12–14. Three tickets, each branched
+from `main`, **no stacking** (the stacked chain got merged into itself last time):
+
+1. Editable ticks after Finish. Model guards out, one test flipped.
+2. Bag screen as an emoji tile grid with −/+ per group, `Bag.groups` helper with tests.
+3. Check screens use the same tiles, tap ticks the next unit, bounce + haptic.
+
 ## Open questions
 
 - Everything in SPEC §5 stays open.

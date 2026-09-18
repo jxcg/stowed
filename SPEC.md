@@ -84,6 +84,23 @@ am bringing them back."*
     (confirmations travel with it). **Out:** manual reordering; trip dates shown on the list
     (list sorts by creation, newest first).
 
+### Decisions taken 2026-09-18 (third round, after the first version shipped as v0.1.0)
+
+12. **Ticks stay editable after Finish.** Amends decisions 6 and 8. Finish still freezes
+    *which items* belong to the check (`closedAt` is the watermark, so a souvenir bought later
+    still goes to the return check only), but you can tick and un-tick those items at any time.
+    "I landed and realised I never packed the socks" is untick, not reopen. There is still no
+    reopen.
+13. **Quantities are duplicate rows, grouped on screen.** Amends decision 3. Tapping + on
+    "T-shirt" adds another `Item` named "T-shirt"; the screen groups same-name, same-emoji
+    items in a bag into one tile with a count. Ticking is per unit (2 of 3), and partial
+    recovery is "mark one not returning". The data model does not change: one row per item
+    stays literally true. Tapping − removes one unit, preferring a unit with no ticks.
+14. **Item lists are emoji tile grids.** Bag screen and check screens show items as tiles:
+    big emoji, name, count badge, −/+ on the tile. Tap on a check ticks the next unit; when
+    all are ticked, tap clears. This is the interaction model only; `DESIGN.md` still owns
+    the visual language when it exists.
+
 ### Data scope (first version)
 
 On-device only. One user, local persistence, no account, no network.
@@ -176,8 +193,7 @@ Not needed for the first version, and **not** to be chosen silently:
 - Arrival check (requested as a possibility; deferred, not rejected).
 - Copying previous trips, reusable templates, an item catalogue.
 - The exact item-entry method beyond v1's name field + guessed emoji (decision 9).
-- Quantities (excluded from v1; the question of how partial recovery would be expressed
-  remains open).
+- Quantities beyond duplicate rows (decision 13), e.g. a true count field.
 - Accounts, syncing, sharing, offline requirements, monetisation.
 - The precise first-release scope.
 - Real bundle identifier (currently the `devplaceholder.…` template value).
@@ -220,7 +236,9 @@ break:
   outbound check and in an open outbound check;
 - marking "not returning", then closing return → still excluded from the closed return;
   marking after return closed → still included (frozen);
-- un-tick while open removes the confirmation; un-tick after close is refused;
+- un-tick removes the confirmation, before and after close (decision 12);
+- grouping: three "T-shirt" rows in one bag form one group of three; − removes an
+  unticked unit first;
 - moving an item to another bag keeps its confirmations;
 - removing a confirmed item from a closed, complete check → it stays complete;
 - search returns the containing bag; cascade delete removes orphaned confirmations.
