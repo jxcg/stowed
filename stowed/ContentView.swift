@@ -11,6 +11,10 @@ struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
     @AppStorage("tripsView") private var view = TripsView.stack
+    // Off by default (decision 23). Nothing in the simulator; needs a real phone.
+    @AppStorage("motionEffect") private var motionEffect = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var motion = MotionReader()
     @State private var isAdding = false
     @State private var tripToDelete: Trip?
 
@@ -45,10 +49,15 @@ struct ContentView: View {
                     Picker("View", selection: $view) {
                         ForEach(TripsView.allCases, id: \.self) { Text($0.title).tag($0) }
                     }
+                    Toggle("Motion effect", isOn: $motionEffect)
                 }
                 Button("Add trip", systemImage: "plus") { isAdding = true }
             }
             .sheet(isPresented: $isAdding) { TripForm() }
+            .onAppear(perform: syncMotion)
+            .onDisappear(perform: motion.stop)
+            .onChange(of: motionEffect) { syncMotion() }
+            .onChange(of: reduceMotion) { syncMotion() }
             // Delete cascades to everything under the trip. Confirm first.
             .confirmationDialog(
                 "Delete \(tripToDelete?.name ?? "trip")?",
@@ -74,8 +83,13 @@ struct ContentView: View {
         }
     }
 
+    // Reads the phone's tilt only while this page is showing and the toggle is on.
+    private func syncMotion() {
+        if motionEffect, !reduceMotion { motion.start() } else { motion.stop() }
+    }
+
     private func card(_ trip: Trip) -> some View {
-        NavigationLink(value: trip) { TripCard(trip: trip) }
+        NavigationLink(value: trip) { TripCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning) }
             .buttonStyle(.plain)
             .contextMenu {
                 Button("Delete", systemImage: "trash", role: .destructive) { tripToDelete = trip }
@@ -89,6 +103,7 @@ struct ContentView: View {
 private struct TripCard: View {
     let trip: Trip
     var tilt: CGSize = .zero
+    var holographic = false
 
     private var palette: CardPalette { trip.cardPalette }
 
@@ -162,6 +177,17 @@ private struct TripCard: View {
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
             .offset(x: tilt.width * 3, y: tilt.height * 3)
+            // Holographic band: a spectrum sweep that rides the tilt, only with the motion effect.
+            if holographic {
+                LinearGradient(colors: [.red, .yellow, .green, .cyan, .blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .mask(
+                        LinearGradient(stops: [.init(color: .clear, location: 0.3), .init(color: .white, location: 0.5), .init(color: .clear, location: 0.7)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                        .offset(x: tilt.width * 8, y: tilt.height * 8)
+                    )
+                    .opacity(0.35)
+                    .blendMode(.overlay)
+            }
             grain.resizable(resizingMode: .tile)
                 .opacity(0.4)
                 .blendMode(.overlay)

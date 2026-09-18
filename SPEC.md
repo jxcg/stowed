@@ -133,6 +133,10 @@ where they conflict.
     remembered. Stack is the vertical scroll of cards with a gap. Deck is a pile: the top trip
     in full, up to four more behind it at a slight angle, a deeper shadow the more trips there
     are, swipe the top card away to bring the next forward. Never more than five drawn.
+23. **Motion effect, off by default.** A toggle in the trips page menu. When on, the phone's
+    tilt moves the card's sheen and shimmer and adds a holographic spectrum band that sweeps
+    with it. Reads the motion sensors only while the trips page is showing. Off whenever the
+    system Reduce Motion setting is on.
 
 On-device only. One user, local persistence, no account, no network.
 
