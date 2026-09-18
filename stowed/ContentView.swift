@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-struct TripListView: View {
+struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
     @State private var isAdding = false
