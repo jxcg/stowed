@@ -21,10 +21,6 @@ struct TripDetailView: View {
                 )
             } else {
                 List {
-                    Section("Checks") {
-                        checkRow(.outbound)
-                        checkRow(.return)
-                    }
                     Section("Bags") {
                         ForEach(trip.bags) { bag in
                             NavigationLink(value: bag) {
@@ -47,7 +43,6 @@ struct TripDetailView: View {
         .navigationTitle(trip.name)
         .searchable(text: $query, prompt: "Find an item")
         .navigationDestination(for: Bag.self) { BagDetailView(bag: $0) }
-        .navigationDestination(for: CheckpointKind.self) { CheckView(trip: trip, kind: $0) }
         .toolbar {
             Button("Add bag", systemImage: "plus") { isAdding = true }
         }
@@ -84,23 +79,6 @@ private extension TripDetailView {
                             Text("\(bag.emoji) \(bag.name)").fontWeight(.semibold)
                         }
                     }
-                }
-            }
-        }
-    }
-
-    func checkRow(_ kind: CheckpointKind) -> some View {
-        let checkpoint = trip.checkpoint(kind)
-        return NavigationLink(value: kind) {
-            HStack {
-                Text(kind.title)
-                Spacer()
-                Text("\(checkpoint.confirmedCount) / \(checkpoint.expectedCount)")
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-                if checkpoint.isClosed {
-                    Image(systemName: "lock.fill").foregroundStyle(.secondary)
-                        .accessibilityLabel("Finished")
                 }
             }
         }
