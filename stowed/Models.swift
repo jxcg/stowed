@@ -90,7 +90,6 @@ final class Item {
         self.quantity = max(1, quantity)
         self.note = note
         self.addedAt = addedAt
-        self.returning = true
     }
 
     // Floor of 1. Zero of something is "delete it".

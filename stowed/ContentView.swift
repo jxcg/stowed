@@ -142,12 +142,10 @@ struct ContentView: View {
 private struct TripCard: View {
     let trip: Trip
 
+    // First 12 distinct emoji, in packing order.
     private var collage: [String] {
-        var seen: [String] = []
-        for emoji in trip.items.sorted(by: { $0.addedAt < $1.addedAt }).map(\.emoji) where !seen.contains(emoji) {
-            seen.append(emoji)
-        }
-        return Array(seen.prefix(12))
+        var seen = Set<String>()
+        return Array(trip.items.sorted { $0.addedAt < $1.addedAt }.map(\.emoji).filter { seen.insert($0).inserted }.prefix(12))
     }
 
     private var dates: String? {

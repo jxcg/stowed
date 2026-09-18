@@ -4,7 +4,6 @@ import SwiftUI
 // Unticked is grey on purpose: "not looked at yet", never "missing".
 struct ReturnView: View {
     let trip: Trip
-    @State private var tickCount = 0   // bumps on every tick so the haptic fires
 
     private let columns = [GridItem(.adaptive(minimum: 88), spacing: 12)]
 
@@ -28,7 +27,7 @@ struct ReturnView: View {
                         Text("\(bag.emoji) \(bag.name)").font(.headline)
                         LazyVGrid(columns: columns, spacing: 12) {
                             ForEach(bag.items.sorted { $0.addedAt < $1.addedAt }) { item in
-                                ItemTile(item: item) { tickCount += 1 }
+                                ItemTile(item: item)
                             }
                         }
                     }
@@ -38,14 +37,13 @@ struct ReturnView: View {
         }
         .navigationTitle("Return check")
         .navigationSubtitle("\(trip.returnConfirmedCount) / \(trip.returnExpected.count)")
-        .sensoryFeedback(.success, trigger: tickCount)
+        .sensoryFeedback(.success, trigger: trip.returnConfirmedCount)
     }
 }
 
 // Big emoji, name, count badge. Tap ticks. Long press for not-returning and quantity.
 private struct ItemTile: View {
     let item: Item
-    let onTick: () -> Void
 
     private var badge: String? {
         if item.returnQuantity != nil { return "\(item.quantityComingHome)/\(item.quantity)" }
@@ -82,7 +80,6 @@ private struct ItemTile: View {
         .onTapGesture {
             guard item.returning else { return }
             item.toggleReturnConfirmed()
-            onTick()
         }
         .contextMenu {
             if item.returning {

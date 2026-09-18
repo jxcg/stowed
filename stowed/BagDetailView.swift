@@ -62,7 +62,7 @@ struct BagDetailView: View {
 
 // emoji | name + note | count | −/+. Tap the text to edit.
 private struct ItemRow: View {
-    let item: Item
+    @Bindable var item: Item
     let onTap: () -> Void
 
     var body: some View {
@@ -86,12 +86,10 @@ private struct ItemRow: View {
             .buttonStyle(.plain)
             .tint(item.returning ? .primary : .secondary)
 
-            Text("\(item.quantity)").monospacedDigit().foregroundStyle(.secondary)
-            Stepper("Quantity", value: Binding(
-                get: { item.quantity },
-                set: { item.quantity = max(1, $0) }
-            ), in: 1...99)
-            .labelsHidden()
+            Stepper("\(item.quantity)", value: $item.quantity, in: 1...99)
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .fixedSize()
         }
     }
 }
