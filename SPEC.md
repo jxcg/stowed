@@ -137,6 +137,11 @@ where they conflict.
     tilt moves the card's sheen and shimmer and adds a holographic spectrum band that sweeps
     with it. Reads the motion sensors only while the trips page is showing. Off whenever the
     system Reduce Motion setting is on.
+24. **Card textures, random from a curated set, stored on the trip.** Three procedural
+    textures drawn from the trip's own initial, dates and name, seeded so a card never
+    changes: a scatter of the initial and date digits, the initial tiled on a diagonal
+    lattice, and a passport-stamp ring of name, dates and STOWED around the inner border. All
+    sit under the grain and the holographic band.
 
 On-device only. One user, local persistence, no account, no network.
 
