@@ -4,7 +4,7 @@ import SwiftUI
 @main struct StowedApp: App {
     var body: some Scene {
         WindowGroup {
-            TripListView()
+            ContentView()
         }
         .modelContainer(for: Trip.self)
     }
