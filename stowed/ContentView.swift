@@ -69,10 +69,11 @@ struct ContentView: View {
     }
 }
 
-// A playing card (decision 20). Gradient back from the trip's hue, paper face with a double
-// rule, the initial in two corners like a real card, the packed emoji as the pips.
+// A playing card (decision 20): one deep colour, darker toward the edges, grain heaviest in the
+// middle, a light foil frame in the same hue, the initial in two corners, packed emoji as pips.
 private struct TripCard: View {
     let trip: Trip
+    var tilt: CGSize = .zero
 
     // First 12 distinct emoji, in packing order.
     private var collage: [String] {
@@ -86,36 +87,28 @@ private struct TripCard: View {
         return range.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? start.formatted(date: .abbreviated, time: .omitted)
     }
 
-    private var light: Color { Color(hue: trip.hue, saturation: 0.6, brightness: 0.9) }
-    private var dark: Color { Color(hue: (trip.hue + 0.1).truncatingRemainder(dividingBy: 1), saturation: 0.8, brightness: 0.55) }
+    private func tone(_ shift: Double, _ saturation: Double, _ brightness: Double) -> Color {
+        Color(hue: (trip.hue + shift).truncatingRemainder(dividingBy: 1), saturation: saturation, brightness: brightness)
+    }
     private var initial: String { String(trip.name.prefix(1)).uppercased() }
     private var pip: String { collage.first ?? "✈️" }
 
     var body: some View {
         ZStack {
-            // Back: gradient plus a soft sheen, like light on a laminated card.
             RoundedRectangle(cornerRadius: 28)
-                .fill(LinearGradient(colors: [light, dark], startPoint: .topLeading, endPoint: .bottomTrailing))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 28)
-                        .fill(RadialGradient(colors: [.white.opacity(0.35), .clear], center: .topLeading, startRadius: 0, endRadius: 360))
-                )
-            // Face: paper panel with the classic double rule.
-            RoundedRectangle(cornerRadius: 18)
-                .fill(.background.opacity(0.94))
-                .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(.secondary.opacity(0.35)).padding(6))
-                .padding(16)
+                .fill(LinearGradient(colors: [tone(0, 0.3, 0.98), tone(0, 0.5, 0.82)], startPoint: .topLeading, endPoint: .bottomTrailing))
+            art.clipShape(RoundedRectangle(cornerRadius: 20)).padding(9)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 Text(trip.name)
                     .font(.system(.title, design: .serif, weight: .bold))
                     .multilineTextAlignment(.center)
                 if let dates {
-                    Text(dates).font(.system(.subheadline, design: .serif)).foregroundStyle(.secondary)
+                    Text(dates).font(.system(.subheadline, design: .serif)).opacity(0.85)
                 }
                 Spacer(minLength: 8)
                 if collage.isEmpty {
-                    Text("Nothing packed yet").font(.subheadline).foregroundStyle(.secondary)
+                    Text("Nothing packed yet").font(.subheadline).opacity(0.85)
                 } else {
                     Text(collage.joined(separator: "  "))
                         .font(.system(size: 34))
@@ -127,16 +120,15 @@ private struct TripCard: View {
                     Text("\(trip.bags.count) bags · \(trip.items.count) items")
                     Spacer()
                     if trip.isReturnComplete {
-                        Label("Home", systemImage: "checkmark.seal.fill").foregroundStyle(Color.accentColor)
-                            .accessibilityLabel("Trip complete")
+                        Label("Home", systemImage: "checkmark.seal.fill").accessibilityLabel("Trip complete")
                     } else if trip.hasStartedReturn {
                         Text("Home \(trip.returnConfirmedCount) / \(trip.returnExpected.count)").monospacedDigit()
                     }
                 }
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .opacity(0.85)
             }
-            .padding(40)
+            .padding(44)
 
             cornerMark
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -144,9 +136,30 @@ private struct TripCard: View {
                 .rotationEffect(.degrees(180))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
         }
+        .foregroundStyle(.white)
+        .shadow(color: .black.opacity(0.25), radius: 1)
         .aspectRatio(0.72, contentMode: .fit)
-        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+        .shadow(color: .black.opacity(0.18), radius: 10, y: 6)
         .accessibilityElement(children: .combine)
+    }
+
+    // One hue: mid tone in the centre falling to a darker edge. A sheen that follows the tilt,
+    // a faint shimmer band, then grain masked so it is heaviest in the middle.
+    private var art: some View {
+        ZStack {
+            RadialGradient(colors: [tone(0, 0.7, 0.52), tone(0, 0.85, 0.26)], center: .center, startRadius: 0, endRadius: 440)
+            RadialGradient(colors: [.white.opacity(0.16), .clear], center: .topLeading, startRadius: 0, endRadius: 360)
+                .offset(tilt)
+            LinearGradient(
+                stops: [.init(color: .clear, location: 0.35), .init(color: .white.opacity(0.1), location: 0.5), .init(color: .clear, location: 0.65)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            .offset(x: tilt.width * 3, y: tilt.height * 3)
+            grain.resizable(resizingMode: .tile)
+                .opacity(0.4)
+                .blendMode(.overlay)
+                .mask(RadialGradient(colors: [.white, .white.opacity(0.1)], center: .center, startRadius: 30, endRadius: 380))
+        }
     }
 
     private var cornerMark: some View {
@@ -154,10 +167,23 @@ private struct TripCard: View {
             Text(initial).font(.system(.title2, design: .serif, weight: .bold))
             Text(pip).font(.caption)
         }
-        .padding(.horizontal, 30)
-        .padding(.vertical, 28)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 22)
     }
 }
+
+// Film grain: one tiny random-noise image, tiled across the card. Made once.
+private let grain: Image = {
+    let size = 96
+    let pixels = (0..<size * size).map { _ in UInt8.random(in: 0...255) }
+    let provider = CGDataProvider(data: Data(pixels) as CFData)!
+    let cgImage = CGImage(
+        width: size, height: size, bitsPerComponent: 8, bitsPerPixel: 8, bytesPerRow: size,
+        space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue),
+        provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent
+    )!
+    return Image(decorative: cgImage, scale: 1)
+}()
 
 // New trip. Name required. Dates behind a toggle so an undated trip is name + Save.
 private struct TripForm: View {
