@@ -3,10 +3,10 @@ import SwiftData
 import Testing
 @testable import stowed
 
-// Swift Testing also exports a `Confirmation`; ours wins inside this file.
+// Swift Testing has its own `Confirmation`. Ours wins in this file.
 private typealias Confirmation = stowed.Confirmation
 
-/// Every test builds its own in-memory store so nothing touches real data.
+// Fresh in-memory store per test. Never touches real data.
 private func makeContext() throws -> ModelContext {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Trip.self, configurations: config)
@@ -16,7 +16,7 @@ private func makeContext() throws -> ModelContext {
 private let t0 = Date(timeIntervalSince1970: 1_000_000)
 private func at(_ seconds: TimeInterval) -> Date { t0.addingTimeInterval(seconds) }
 
-/// A trip with one bag holding `count` items, all added at `t0`.
+// One trip, one bag, `count` items, all added at t0.
 private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag) {
     let trip = Trip(name: "Lisbon", createdAt: t0)
     context.insert(trip)
@@ -231,7 +231,7 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
     @Test func bagWithNoItems() throws {
         let context = try makeContext()
         let (trip, _) = makeTrip(items: 0, in: context)
-        #expect(trip.checkpoint(.return).expectedItems.isEmpty)
+        #expect(trip.checkpoint(.return).expectedCount == 0)
     }
 
     @Test func itemDeletedMidCheck() throws {

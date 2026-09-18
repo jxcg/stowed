@@ -3,7 +3,7 @@ import SwiftUI
 
 struct BagDetailView: View {
     @Environment(\.modelContext) private var context
-    @Bindable var bag: Bag
+    let bag: Bag
     @State private var newName = ""
     @State private var itemToEdit: Item?
     @FocusState private var addFieldFocused: Bool
@@ -46,7 +46,7 @@ struct BagDetailView: View {
                 }
             }
 
-            // Stays put after each add so packing twenty things is twenty returns, no sheet.
+            // Add row never goes away. Twenty items = twenty returns. No sheet.
             Section {
                 HStack {
                     Text(EmojiGuess.guess(for: newName, fallback: EmojiGuess.itemFallback))
@@ -64,7 +64,7 @@ struct BagDetailView: View {
 
     private func addItem() {
         guard !trimmedNewName.isEmpty else { return }
-        // addedAt defaults to now inside Item.init; the checkpoint rules depend on it.
+        // addedAt is set to now in Item.init. Load-bearing: it decides which check an item joins.
         bag.items.append(Item(
             name: trimmedNewName,
             emoji: EmojiGuess.guess(for: trimmedNewName, fallback: EmojiGuess.itemFallback)
@@ -74,13 +74,12 @@ struct BagDetailView: View {
     }
 }
 
-/// Edit an item: rename, override the emoji, or move it to another bag in the same trip.
+// Rename, change emoji, or move to another bag in the same trip.
 private struct ItemForm: View {
     @Environment(\.dismiss) private var dismiss
-    @Bindable var item: Item
+    let item: Item
     @State private var name: String
     @State private var emoji: String
-    @State private var userChoseEmoji = true
     @State private var bag: Bag?
 
     init(item: Item) {
@@ -97,7 +96,7 @@ private struct ItemForm: View {
         NavigationStack {
             Form {
                 HStack {
-                    EmojiField(emoji: $emoji, placeholder: EmojiGuess.itemFallback, userChoseEmoji: $userChoseEmoji)
+                    EmojiField(emoji: $emoji, placeholder: EmojiGuess.itemFallback)
                     TextField("Item name", text: $name)
                 }
                 if bagsInTrip.count > 1 {
@@ -116,7 +115,7 @@ private struct ItemForm: View {
                     Button("Save") {
                         item.name = trimmedName
                         item.emoji = emoji.isEmpty ? EmojiGuess.itemFallback : emoji
-                        if let bag, bag !== item.bag { item.bag = bag }   // confirmations travel with it
+                        if let bag, bag !== item.bag { item.bag = bag }   // ticks move with it
                         dismiss()
                     }
                     .disabled(trimmedName.isEmpty)

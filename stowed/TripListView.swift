@@ -43,7 +43,7 @@ struct TripListView: View {
                 Button("Add trip", systemImage: "plus") { isAdding = true }
             }
             .sheet(isPresented: $isAdding) { TripForm() }
-            // Deleting a trip cascades to bags, items and confirmations, so it gets a confirm step.
+            // Delete cascades to everything under the trip. Confirm first.
             .confirmationDialog(
                 "Delete \(tripToDelete?.name ?? "trip")?",
                 isPresented: Binding(get: { tripToDelete != nil }, set: { if !$0 { tripToDelete = nil } }),
@@ -59,8 +59,7 @@ struct TripListView: View {
     }
 }
 
-/// Create sheet. Name is required; dates are optional and hidden behind a toggle so an
-/// undated trip stays a two-tap job.
+// New trip. Name required. Dates behind a toggle so an undated trip is name + Save.
 private struct TripForm: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
@@ -93,8 +92,8 @@ private struct TripForm: View {
                             endDate: hasDates ? endDate : nil
                         )
                         context.insert(trip)
-                        // Both checks exist from trip creation (SPEC decision 7). Done after
-                        // insert, which is the moment SwiftData persists relationships reliably.
+                        // Both checks exist from day one (decision 7). After insert on purpose:
+                        // that is when SwiftData persists relationships reliably.
                         _ = trip.checkpoint(.outbound)
                         _ = trip.checkpoint(.return)
                         dismiss()

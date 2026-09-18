@@ -3,7 +3,7 @@ import SwiftUI
 
 struct TripDetailView: View {
     @Environment(\.modelContext) private var context
-    @Bindable var trip: Trip
+    let trip: Trip
     @State private var bagToEdit: Bag?
     @State private var isAdding = false
     @State private var bagToDelete: Bag?
@@ -68,7 +68,7 @@ struct TripDetailView: View {
 }
 
 private extension TripDetailView {
-    /// The bag is the answer, so it gets the bold slot. Tapping a result opens that bag.
+    // The bag IS the answer. Bold it. Tap opens that bag.
     @ViewBuilder var searchResults: some View {
         let matches = trip.items(matching: query)
             .sorted { ($0.bag?.name ?? "", $0.name) < ($1.bag?.name ?? "", $1.name) }
@@ -107,21 +107,20 @@ private extension TripDetailView {
     }
 }
 
-/// Add or rename a bag. The emoji is guessed from the name until the user types their own.
+// Add or rename a bag. bag == nil means add.
 private struct BagForm: View {
     @Environment(\.dismiss) private var dismiss
     let trip: Trip
     let bag: Bag?
     @State private var name: String
     @State private var emoji: String
-    @State private var userChoseEmoji: Bool
+    @State private var lastGuess = ""
 
     init(trip: Trip, bag: Bag?) {
         self.trip = trip
         self.bag = bag
         _name = State(initialValue: bag?.name ?? "")
         _emoji = State(initialValue: bag?.emoji ?? "")
-        _userChoseEmoji = State(initialValue: bag != nil)
     }
 
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -130,10 +129,13 @@ private struct BagForm: View {
         NavigationStack {
             Form {
                 HStack {
-                    EmojiField(emoji: $emoji, placeholder: EmojiGuess.bagFallback, userChoseEmoji: $userChoseEmoji)
+                    EmojiField(emoji: $emoji, placeholder: EmojiGuess.bagFallback)
                     TextField("Bag name", text: $name)
                         .onChange(of: name) { _, new in
-                            if !userChoseEmoji { emoji = EmojiGuess.guess(for: new, fallback: "") }
+                            // Only overwrite our own guess. Anything the user typed stays.
+                            let guess = EmojiGuess.guess(for: new, fallback: "")
+                            if emoji.isEmpty || emoji == lastGuess { emoji = guess }
+                            lastGuess = guess
                         }
                 }
             }

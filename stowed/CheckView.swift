@@ -1,12 +1,11 @@
-import SwiftData
 import SwiftUI
 
 extension CheckpointKind {
     var title: String { self == .outbound ? "Outbound" : "Return" }
 }
 
-/// One screen for both checks. Items are grouped by bag; a tap toggles the confirmation.
-/// Unchecked is drawn neutrally on purpose: it means "not yet verified", never "missing".
+// One screen, both checks. Grouped by bag. Tap = toggle tick.
+// Unchecked is grey on purpose. It means "not looked at yet", never "missing". No red.
 struct CheckView: View {
     let trip: Trip
     let kind: CheckpointKind
@@ -37,7 +36,11 @@ struct CheckView: View {
                         ForEach(expected) { item in
                             let confirmed = checkpoint.isConfirmed(item)
                             Button {
-                                confirmed ? checkpoint.unconfirm(item) : checkpoint.confirm(item)
+                                if confirmed {
+                                    checkpoint.unconfirm(item)
+                                } else {
+                                    checkpoint.confirm(item)
+                                }
                             } label: {
                                 Label {
                                     Text("\(item.emoji) \(item.name)")
@@ -50,7 +53,7 @@ struct CheckView: View {
                             .disabled(checkpoint.isClosed)
                             .accessibilityValue(confirmed ? "Confirmed" : "Not yet verified")
                             .swipeActions {
-                                // A mark, not a delete: outbound history stays (SPEC decision 4).
+                                // A mark, not a delete. Outbound history stays (decision 4).
                                 if kind == .return, !checkpoint.isClosed {
                                     Button("Not returning", systemImage: "arrow.uturn.left.circle") {
                                         item.notReturningAt = .now
@@ -69,7 +72,7 @@ struct CheckView: View {
                 Button("Finish") { isConfirmingFinish = true }
             }
         }
-        // Closing is permanent (SPEC decision 6), hence the confirm step.
+        // Finish is forever (decision 6). Hence the confirm.
         .confirmationDialog(
             "Finish \(kind.title.lowercased()) check at \(checkpoint.confirmedCount) / \(checkpoint.expectedCount)?",
             isPresented: $isConfirmingFinish,
