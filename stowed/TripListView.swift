@@ -23,7 +23,7 @@ struct TripListView: View {
                                 HStack {
                                     Text(trip.name)
                                     Spacer()
-                                    if trip.checkpoints.contains(where: { $0.kind == .return && $0.isClosed }) {
+                                    if trip.isReturnComplete {
                                         Image(systemName: "checkmark.seal.fill")
                                             .foregroundStyle(Color.accentColor)
                                             .accessibilityLabel("Trip complete")
@@ -92,10 +92,6 @@ private struct TripForm: View {
                             endDate: hasDates ? endDate : nil
                         )
                         context.insert(trip)
-                        // Both checks exist from day one (decision 7). After insert on purpose:
-                        // that is when SwiftData persists relationships reliably.
-                        _ = trip.checkpoint(.outbound)
-                        _ = trip.checkpoint(.return)
                         dismiss()
                     }
                     .disabled(trimmedName.isEmpty)
