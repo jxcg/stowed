@@ -1,11 +1,116 @@
+import SwiftData
 import SwiftUI
 
-// ponytail: placeholder, #5 fills this with the bag list.
 struct TripDetailView: View {
-    let trip: Trip
+    @Environment(\.modelContext) private var context
+    @Bindable var trip: Trip
+    @State private var bagToEdit: Bag?
+    @State private var isAdding = false
+    @State private var bagToDelete: Bag?
 
     var body: some View {
-        ContentUnavailableView("No bags yet", systemImage: "bag", description: Text("Bags arrive in the next issue."))
-            .navigationTitle(trip.name)
+        Group {
+            if trip.bags.isEmpty {
+                ContentUnavailableView(
+                    "No bags yet",
+                    systemImage: "bag",
+                    description: Text("Tap + to add a suitcase, backpack, anything.")
+                )
+            } else {
+                List(trip.bags) { bag in
+                    NavigationLink(value: bag) {
+                        HStack {
+                            Text(bag.emoji)
+                            Text(bag.name)
+                            Spacer()
+                            Text("\(bag.items.count)").foregroundStyle(.secondary)
+                        }
+                    }
+                    .swipeActions {
+                        Button("Delete", systemImage: "trash", role: .destructive) { bagToDelete = bag }
+                        Button("Rename", systemImage: "pencil") { bagToEdit = bag }
+                    }
+                }
+            }
+        }
+        .navigationTitle(trip.name)
+        .navigationDestination(for: Bag.self) { BagDetailView(bag: $0) }
+        .toolbar {
+            Button("Add bag", systemImage: "plus") { isAdding = true }
+        }
+        .sheet(isPresented: $isAdding) { BagForm(trip: trip, bag: nil) }
+        .sheet(item: $bagToEdit) { BagForm(trip: trip, bag: $0) }
+        .confirmationDialog(
+            "Delete \(bagToDelete?.name ?? "bag")?",
+            isPresented: Binding(get: { bagToDelete != nil }, set: { if !$0 { bagToDelete = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let bag = bagToDelete { context.delete(bag) }
+            }
+        } message: {
+            Text("Its \(bagToDelete?.items.count ?? 0) items go with it.")
+        }
+    }
+}
+
+/// Add or rename a bag. The emoji is guessed from the name until the user types their own.
+private struct BagForm: View {
+    @Environment(\.dismiss) private var dismiss
+    let trip: Trip
+    let bag: Bag?
+    @State private var name: String
+    @State private var emoji: String
+    @State private var userChoseEmoji: Bool
+
+    init(trip: Trip, bag: Bag?) {
+        self.trip = trip
+        self.bag = bag
+        _name = State(initialValue: bag?.name ?? "")
+        _emoji = State(initialValue: bag?.emoji ?? "")
+        _userChoseEmoji = State(initialValue: bag != nil)
+    }
+
+    private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                HStack {
+                    TextField(EmojiGuess.bagFallback, text: $emoji)
+                        .frame(width: 44)
+                        .multilineTextAlignment(.center)
+                        .onChange(of: emoji) { _, new in
+                            // Keep one grapheme so the field never holds a word.
+                            let last = String(new.suffix(1))
+                            if new != last { emoji = last }
+                            if !last.isEmpty { userChoseEmoji = true }
+                        }
+                        .accessibilityLabel("Emoji")
+                    TextField("Bag name", text: $name)
+                        .onChange(of: name) { _, new in
+                            if !userChoseEmoji { emoji = EmojiGuess.guess(for: new, fallback: "") }
+                        }
+                }
+            }
+            .navigationTitle(bag == nil ? "New bag" : "Rename bag")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { save(); dismiss() }.disabled(trimmedName.isEmpty)
+                }
+            }
+        }
+    }
+
+    private func save() {
+        let finalEmoji = emoji.isEmpty ? EmojiGuess.bagFallback : emoji
+        if let bag {
+            bag.name = trimmedName
+            bag.emoji = finalEmoji
+        } else {
+            trip.bags.append(Bag(name: trimmedName, emoji: finalEmoji))
+        }
     }
 }
