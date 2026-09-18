@@ -1,23 +1,9 @@
 import SwiftData
 import SwiftUI
 
-// ponytail: three layouts behind a switch so the owner can compare on device (decision 18).
-// Issue #33 deletes the two losers and this enum.
-enum TripsLayout: String, CaseIterable {
-    case carousel, hero, stack
-    var title: String {
-        switch self {
-        case .carousel: "Carousel"
-        case .hero: "Hero + list"
-        case .stack: "Card stack"
-        }
-    }
-}
-
 struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
-    @AppStorage("tripsLayout") private var layout = TripsLayout.carousel
     @State private var isAdding = false
     @State private var tripToDelete: Trip?
 
@@ -40,21 +26,12 @@ struct ContentView: View {
                         description: Text("Tap + to plan your first one.")
                     )
                 } else {
-                    switch layout {
-                    case .carousel: carousel
-                    case .hero: hero
-                    case .stack: stack
-                    }
+                    stack
                 }
             }
             .navigationTitle("Trips")
             .navigationDestination(for: Trip.self) { TripDetailView(trip: $0) }
             .toolbar {
-                Menu("Layout", systemImage: "rectangle.3.group") {
-                    Picker("Layout", selection: $layout) {
-                        ForEach(TripsLayout.allCases, id: \.self) { Text($0.title).tag($0) }
-                    }
-                }
                 Button("Add trip", systemImage: "plus") { isAdding = true }
             }
             .sheet(isPresented: $isAdding) { TripForm() }
@@ -73,53 +50,7 @@ struct ContentView: View {
         }
     }
 
-    // MARK: Layout 1. Horizontal paging, one card centred, like Wallet passes.
-    private var carousel: some View {
-        ScrollView(.horizontal) {
-            LazyHStack(spacing: 16) {
-                ForEach(orderedTrips) { trip in
-                    card(trip)
-                        .containerRelativeFrame(.horizontal)
-                }
-            }
-            .scrollTargetLayout()
-        }
-        .contentMargins(.horizontal, 24, for: .scrollContent)
-        .scrollTargetBehavior(.viewAligned)
-        .scrollIndicators(.hidden)
-    }
-
-    // MARK: Layout 2. The next trip is a big card, the rest are compact rows.
-    private var hero: some View {
-        List {
-            if let next = orderedTrips.first {
-                card(next)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-            }
-            if orderedTrips.count > 1 {
-                Section("Other trips") {
-                    ForEach(orderedTrips.dropFirst()) { trip in
-                        NavigationLink(value: trip) {
-                            HStack {
-                                Text(trip.name)
-                                Spacer()
-                                if trip.isReturnComplete {
-                                    Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.accentColor)
-                                }
-                            }
-                        }
-                        .swipeActions {
-                            Button("Delete", systemImage: "trash", role: .destructive) { tripToDelete = trip }
-                        }
-                    }
-                }
-            }
-        }
-        .listStyle(.plain)
-    }
-
-    // MARK: Layout 3. Every trip is a tall card in a vertical stack.
+    // Every trip is a tall card in a vertical stack (decision 18).
     private var stack: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
