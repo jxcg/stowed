@@ -109,9 +109,9 @@ where they conflict.
 17. **Screens.** Bag screen is rows: emoji, name, note caption, stepper on the trailing edge,
     quick-add row at the bottom. Return screen is an emoji tile grid: tap ticks, long press
     for not-returning and quantity. `DESIGN.md` still owns the visual language.
-18. **Trips page: three layouts behind a runtime switch**, temporarily, so the owner can
-    compare on device: a horizontal card carousel, a hero card with a compact past list, and
-    a vertical stack of cards. Two get deleted once one is chosen.
+18. **Trips page is a vertical stack of cards.** Chosen 2026-09-18 from three layouts built
+    behind a switch (carousel, hero + list, card stack); the other two and the switch are
+    deleted.
 19. **Schema changes must migrate in place.** Every new non-optional attribute carries a
     default value so SwiftData's lightweight migration can fill existing rows. A test guards
     this. Learned the hard way on 2026-09-18: `Item.note` without a default made the store
