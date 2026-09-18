@@ -23,6 +23,7 @@ struct TripDetailView: View {
                 List {
                     Section("Checks") {
                         checkRow(.outbound)
+                        checkRow(.return)
                     }
                     Section("Bags") {
                         ForEach(trip.bags) { bag in

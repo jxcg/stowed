@@ -19,7 +19,17 @@ struct TripListView: View {
                 } else {
                     List {
                         ForEach(trips) { trip in
-                            NavigationLink(trip.name, value: trip)
+                            NavigationLink(value: trip) {
+                                HStack {
+                                    Text(trip.name)
+                                    Spacer()
+                                    if trip.checkpoints.contains(where: { $0.kind == .return && $0.isClosed }) {
+                                        Image(systemName: "checkmark.seal.fill")
+                                            .foregroundStyle(Color.accentColor)
+                                            .accessibilityLabel("Trip complete")
+                                    }
+                                }
+                            }
                         }
                         .onDelete { offsets in
                             tripToDelete = offsets.first.map { trips[$0] }

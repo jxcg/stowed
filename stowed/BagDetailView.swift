@@ -26,13 +26,22 @@ struct BagDetailView: View {
                         itemToEdit = item
                     } label: {
                         HStack {
-                            Text(item.emoji)
+                            Text(item.emoji).saturation(item.notReturningAt == nil ? 1 : 0)
                             Text(item.name)
+                            if item.notReturningAt != nil {
+                                Spacer()
+                                Text("Not returning").font(.caption).foregroundStyle(.secondary)
+                            }
                         }
                     }
-                    .tint(.primary)
+                    .tint(item.notReturningAt == nil ? .primary : .secondary)
                     .swipeActions {
                         Button("Delete", systemImage: "trash", role: .destructive) { context.delete(item) }
+                        if item.notReturningAt == nil {
+                            Button("Not returning", systemImage: "arrow.uturn.left.circle") { item.notReturningAt = .now }
+                        } else {
+                            Button("Returning", systemImage: "arrow.uturn.right.circle") { item.notReturningAt = nil }
+                        }
                     }
                 }
             }

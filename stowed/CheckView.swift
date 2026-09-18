@@ -20,6 +20,12 @@ struct CheckView: View {
                 Label("Finished \(closedAt.formatted(date: .abbreviated, time: .shortened))", systemImage: "lock")
                     .foregroundStyle(.secondary)
             }
+            if checkpoint.expectedCount > 0, checkpoint.isComplete {
+                Label(kind == .return ? "Everything's accounted for. Safe travels home." : "All packed.",
+                      systemImage: "checkmark.seal.fill")
+                    .foregroundStyle(Color.accentColor)
+                    .font(.headline)
+            }
             if checkpoint.expectedCount == 0 {
                 ContentUnavailableView("Nothing to check", systemImage: "checklist", description: Text("Add some items first."))
                     .listRowSeparator(.hidden)
@@ -43,6 +49,14 @@ struct CheckView: View {
                             .tint(.primary)
                             .disabled(checkpoint.isClosed)
                             .accessibilityValue(confirmed ? "Confirmed" : "Not yet verified")
+                            .swipeActions {
+                                // A mark, not a delete: outbound history stays (SPEC decision 4).
+                                if kind == .return, !checkpoint.isClosed {
+                                    Button("Not returning", systemImage: "arrow.uturn.left.circle") {
+                                        item.notReturningAt = .now
+                                    }
+                                }
+                            }
                         }
                     }
                 }
