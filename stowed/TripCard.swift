@@ -59,7 +59,7 @@ struct TripCard: View {
         .background(backdrop)
         // Tilt it under the light and the security printing answers, the way a banknote does,
         // with a slick of spectrum across it like the holographic patch on the same note.
-        .overlay(UltravioletLayer(trip: trip, ink: ink, strength: ultraviolet * (ink.pearl ? 0.18 : 1)))
+        .overlay(UltravioletLayer(trip: trip, ink: ink, strength: ultraviolet * (ink.pearl ? 0.22 : 1)))
         .overlay {
             if holographic {
                 LinearGradient(colors: [.red, .yellow, .green, .cyan, .blue, .purple],
@@ -289,7 +289,7 @@ private struct TickStrip: View {
                 .shadow(color: lit.opacity(0.8), radius: 5)
         }
         // A trace of it at rest, so the strip is not a blank band, then it comes up with the tilt.
-        .opacity(0.05 + ultraviolet * 0.95)
+        .opacity(0.015 + ultraviolet * 0.985)
         .frame(height: 16)
         .padding(.horizontal, 12)
         .padding(.top, 8)
