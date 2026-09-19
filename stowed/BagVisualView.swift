@@ -7,7 +7,9 @@ struct BagVisualView: View {
     let bag: Bag
     let onTap: (Item) -> Void
 
-    private var palette: CardPalette { bag.trip?.cardPalette ?? .oxblood }
+    @Environment(\.colorScheme) private var scheme
+    // The bag wears the same metal and ink as the trip's card.
+    private var ink: NeonInk { NeonInk(accent: bag.trip?.cardPalette.neonAccent ?? 0.76, dark: scheme == .dark) }
     private var checking: Bool { bag.trip?.hasStartedReturn ?? false }
     private var items: [Item] { bag.items.sorted { $0.addedAt < $1.addedAt } }
 
@@ -17,7 +19,7 @@ struct BagVisualView: View {
         VStack(spacing: 0) {
             handle
             ZStack {
-                RoundedRectangle(cornerRadius: 26).fill(palette.frameGradient)
+                RoundedRectangle(cornerRadius: 26).fill(ink.rim)
                 shell.clipShape(RoundedRectangle(cornerRadius: 18)).padding(8)
                 RoundedRectangle(cornerRadius: 15).strokeBorder(.white.opacity(0.3), lineWidth: 1).padding(13)
 
@@ -38,7 +40,7 @@ struct BagVisualView: View {
     // A capsule above the bag and two studs below read as luggage, not another card.
     private var handle: some View {
         Capsule()
-            .strokeBorder(palette.frameGradient, lineWidth: 7)
+            .strokeBorder(ink.rim, lineWidth: 7)
             .frame(width: 96, height: 30)
             .padding(.bottom, -14)
             .accessibilityHidden(true)
@@ -47,7 +49,7 @@ struct BagVisualView: View {
     private var latches: some View {
         HStack(spacing: 120) {
             ForEach(0..<2, id: \.self) { _ in
-                RoundedRectangle(cornerRadius: 3).fill(palette.frameGradient).frame(width: 34, height: 9)
+                RoundedRectangle(cornerRadius: 3).fill(ink.rim).frame(width: 34, height: 9)
             }
         }
         .padding(.top, -5)
@@ -56,8 +58,12 @@ struct BagVisualView: View {
 
     private var shell: some View {
         ZStack {
-            RadialGradient(colors: [palette.centre, palette.edge], center: .center, startRadius: 0, endRadius: 420)
-            if let trip = bag.trip { CardTextureView(trip: trip).opacity(0.45) }
+            ink.ground
+            if let trip = bag.trip {
+                Chrome(phase: Double(trip.textureSeed % 100) / 100, dark: scheme == .dark)
+                    .opacity(scheme == .dark ? 0.2 : 0.14)
+                    .blendMode(.overlay)
+            }
             // Items are the subject here; the texture stays behind them.
             Color.black.opacity(0.18)
         }

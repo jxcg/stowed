@@ -58,3 +58,17 @@ struct PrismSeam: View {
         .accessibilityHidden(true)
     }
 }
+
+// Film grain: one tiny random-noise tile, made once and tiled across the card.
+let grain = tile(size: 96) { _, _ in UInt8.random(in: 0...255) }
+
+private func tile(size: Int, pixel: (Int, Int) -> UInt8) -> Image {
+    let pixels = (0..<size * size).map { pixel($0 % size, $0 / size) }
+    let provider = CGDataProvider(data: Data(pixels) as CFData)!
+    let cgImage = CGImage(
+        width: size, height: size, bitsPerComponent: 8, bitsPerPixel: 8, bytesPerRow: size,
+        space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue),
+        provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent
+    )!
+    return Image(decorative: cgImage, scale: 1)
+}

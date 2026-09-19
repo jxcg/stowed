@@ -155,27 +155,17 @@ where they conflict.
     pack imperfectly, each card behind the top one offset and angled by an amount fixed to that
     trip, with its own shadow, and a pile shadow that deepens with the number of trips. Swiping
     either way takes the top card off and reveals the next.
-28. **The playing card is metal and light.** A slim frame in a hard-banded foil gradient in the
-    trip's palette; the face a chrome ground with one prismatic seam across it, the same
-    treatment as the card back; the trip's mark punched out of metal in the middle; the initial
-    and suit in two corners; a small-caps footer; grain over the lot. Letterpressed text, a
-    darker slab of stock under the edge, a contact shadow and an ambient one. With the motion
-    effect on the card turns on both axes and catches a spectrum band.
+28. **There is one card.** The playing card is gone; what is left is metal and light: a muted
+    ground carrying splashes, a prismatic seam across it, brushed metal over the lot, the
+    trip's mark punched out of metal dots, the place in SF Extended, stats under wide labels,
+    the dates along the bottom, and a 4pt rim running into the neighbouring hue.
 29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
     the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.
-30. **A second card style is under comparison: neon.** One base for every card, two modes:
-    pale blue into lavender by day, deep indigo by night. The colours are muted rather than
-    fluorescent, so they age. Only the accent changes from trip to trip,
-    and there are three: cyan, violet, magenta. More than that and the set stops looking like
-    a set. The ground carries the same two splash colours on every card, thrown across it
-    differently each time and fixed to the trip, the place's own letter tiled small
-    across the ground, and grain over the lot, so it never reads as flat. A 4pt rim running from the
-    accent into its deepened neighbour with a fine grain along it, one of eight marks punched out of a brushed-metal dot matrix, lit from
-    behind so it leads the card and burning harder under the blacklight, a tick strip along the top, a row of packed emoji,
-    stats under wide labels, and the dates along the bottom. The place name is set in SF
-    Extended. Nothing is borrowed from any particular app. One of the two styles goes once
-    chosen.
-
+30. **One base for every card, two modes**: pale blue into lavender by day, deep indigo by
+    night. The colours are muted rather than fluorescent, so they age. Three accents only:
+    cyan, violet, magenta. The ground carries the same two splash colours on every card, thrown
+    across it differently each time and fixed to the trip, the place's letter tiled small, and
+    grain over the lot.
 31. **Under the light, the neon card fluoresces and catches a rainbow.** With the motion effect on, tilting the
     phone brings up security printing the way ultraviolet does on a banknote: fibres through
     the stock, a dashed thread down one side, and the trip's letter watermarked across the

@@ -56,12 +56,12 @@ One of them gets deleted once the choice is made.
 
 | File | Job |
 |---|---|
-| `TripCard.swift` | Draws one trip as a playing card, and holds the film grain tile. |
+| `TripCard.swift` | Draws one trip as a card. |
 | `Chrome.swift` | The brushed metal and the prismatic seam, shared by the playing card and the card back. |
 | `DotMatrix.swift` | A symbol punched out of metal dots, and which symbol a trip gets. Used by both card styles. |
 | `TripCardFlip.swift` | The quick view and edit buttons, and the card's back. |
 | `CardPalette.swift` | The ten colours and four suits a card can be, and how its frame is tinted. |
-| `CardTexture.swift` | The three textures, drawn with `Canvas` from the trip's own letters and dates. Also holds `SeededRandom`. |
+| `CardTexture.swift` | `SeededRandom`, plus two enums kept only so stored rows still decode. |
 | `MotionReader.swift` | The phone's tilt, when the motion effect is switched on. Nothing in the simulator. |
 
 A card's look is **decided once and stored on the trip**: palette, suit and texture are
@@ -97,8 +97,6 @@ exercise in the codebase. Nothing else depends on them.
 | The **wallet** trips view | `WalletView.swift` | remove `case wallet` and its branch, same two places |
 | The **stack** trips view | the `stack` property in `ContentView` | remove `case stack` and its branch |
 | The **deck** trips view | `DeckView.swift` | remove `case deck` and its branch |
-| The **neon** card | `NeonCard.swift`, and `neonHue` in `CardPalette.swift` | remove `case neon` from `CardStyle` and its branch in `ContentView` |
-| The **playing card** | `TripCard.swift`, and `frameGradient`/`stock` in `CardPalette.swift` | remove `case playing` and its branch |
 
 If an enum ends up with one case left, delete the enum and its `@AppStorage` line too, and
 call the surviving view directly. The compiler will point at every place that needs it.
