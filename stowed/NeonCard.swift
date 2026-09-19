@@ -45,7 +45,7 @@ struct NeonCard: View {
             details
             footer
         }
-        .background(ink.ground)
+        .background(backdrop)
         // Tilt it under the light and the security printing answers, the way a banknote does,
         // with a slick of spectrum across it like the holographic patch on the same note.
         .overlay(UltravioletLayer(trip: trip, ink: ink, strength: ultraviolet))
@@ -70,13 +70,37 @@ struct NeonCard: View {
         // A fine grain along the rim. Close enough to read as texture rather than a pattern.
         .overlay(
             RoundedRectangle(cornerRadius: 22)
-                .strokeBorder(Color.white.opacity(dark ? 0.16 : 0.3), style: StrokeStyle(lineWidth: 4, dash: [1.5, 2.5]))
+                .strokeBorder(Color.white.opacity(dark ? 0.1 : 0.2), style: StrokeStyle(lineWidth: 4, dash: [1.5, 2.5]))
         )
         .aspectRatio(0.72, contentMode: .fit)
-        .shadow(color: ink.glow.opacity(0.5), radius: 16, y: 8)
+        .shadow(color: ink.glow.opacity(0.2), radius: 10, y: 6)
         .rotation3DEffect(.degrees(-tilt.height * 0.35), axis: (x: 1, y: 0, z: 0))
         .rotation3DEffect(.degrees(tilt.width * 0.35), axis: (x: 0, y: 1, z: 0))
         .accessibilityElement(children: .combine)
+    }
+
+    // The ground is not just a gradient: colour thrown in from the other mode's base, the
+    // place's own letter standing behind everything, and grain over the lot.
+    private var backdrop: some View {
+        ZStack {
+            ink.ground
+            RadialGradient(colors: [ink.splash.opacity(0.55), .clear],
+                           center: .topTrailing, startRadius: 0, endRadius: 280)
+            RadialGradient(colors: [ink.glow.opacity(0.35), .clear],
+                           center: .bottomLeading, startRadius: 0, endRadius: 240)
+            RadialGradient(colors: [ink.splash.opacity(0.3), .clear],
+                           center: .init(x: 0.15, y: 0.25), startRadius: 0, endRadius: 160)
+
+            Text(trip.initial)
+                .font(.system(size: 420, weight: .black).width(.expanded))
+                .foregroundStyle(ink.text.opacity(0.06))
+                .offset(x: 70, y: 40)
+
+            grain.resizable(resizingMode: .tile)
+                .opacity(dark ? 0.22 : 0.3)
+                .blendMode(dark ? .overlay : .multiply)
+        }
+        .accessibilityHidden(true)
     }
 
     private var chipRow: some View {
@@ -168,10 +192,14 @@ struct NeonInk {
     var haze: Color { Color(hue: shifted(-0.02), saturation: dark ? 0.85 : 0.3, brightness: dark ? 0.5 : 0.9) }
     // Everything written on the card.
     var text: Color { dark ? .white : Color(hue: 0.73, saturation: 0.85, brightness: 0.34) }
+    // Colour borrowed from the other mode, thrown across the ground so it is never flat.
+    var splash: Color {
+        dark ? Color(hue: 0.57, saturation: 0.4, brightness: 1) : Color(hue: 0.72, saturation: 0.9, brightness: 0.5)
+    }
     // The rim runs from the accent into its deepened neighbour. Neighbours sit together.
     var rim: LinearGradient {
-        LinearGradient(colors: [Color(hue: accent, saturation: dark ? 0.5 : 0.62, brightness: dark ? 1 : 0.86),
-                                Color(hue: shifted(-0.09), saturation: 0.95, brightness: dark ? 0.52 : 0.6)],
+        LinearGradient(colors: [Color(hue: accent, saturation: dark ? 0.42 : 0.5, brightness: dark ? 0.82 : 0.9),
+                                Color(hue: shifted(-0.09), saturation: dark ? 0.8 : 0.7, brightness: dark ? 0.46 : 0.68)],
                        startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }

@@ -165,7 +165,8 @@ where they conflict.
 30. **A second card style is under comparison: neon.** One base for every card, two modes:
     pale blue into lavender by day, deep indigo by night. Only the accent changes from trip to trip,
     and there are three: cyan, violet, magenta. More than that and the set stops looking like
-    a set. A 4pt rim running from the
+    a set. The ground carries splashes of the other mode's base colour, the place's own letter
+    standing behind everything, and grain over the lot, so it never reads as flat. A 4pt rim running from the
     accent into its deepened neighbour with a fine grain along it, the trip's own letter or a
     map pin punched out of a dot matrix, a tick strip along the top, a row of packed emoji,
     stats under wide labels, and the dates along the bottom. The place name is set in SF
