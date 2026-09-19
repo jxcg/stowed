@@ -84,20 +84,10 @@ struct NeonCard: View {
     private var backdrop: some View {
         ZStack {
             ink.ground
-            RadialGradient(colors: [ink.splash.opacity(0.55), .clear],
-                           center: .topTrailing, startRadius: 0, endRadius: 280)
-            RadialGradient(colors: [ink.glow.opacity(0.35), .clear],
-                           center: .bottomLeading, startRadius: 0, endRadius: 240)
-            RadialGradient(colors: [ink.splash.opacity(0.3), .clear],
-                           center: .init(x: 0.15, y: 0.25), startRadius: 0, endRadius: 160)
-
-            Text(trip.initial)
-                .font(.system(size: 420, weight: .black).width(.expanded))
-                .foregroundStyle(ink.text.opacity(0.06))
-                .offset(x: 70, y: 40)
-
+            Splashes(trip: trip, ink: ink)
+            MonogramField(initial: trip.initial, ink: ink)
             grain.resizable(resizingMode: .tile)
-                .opacity(dark ? 0.22 : 0.3)
+                .opacity(dark ? 0.11 : 0.15)
                 .blendMode(dark ? .overlay : .multiply)
         }
         .accessibilityHidden(true)
@@ -136,16 +126,18 @@ struct NeonCard: View {
             }
         }
         .foregroundStyle(ink.text)
+        .shadow(color: (dark ? Color.black : Color.white).opacity(0.55), radius: 4)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.top, 12)
+        .padding(.bottom, 4)
     }
 
     private func stat(_ label: String, _ value: String, of total: Int? = nil) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(label)
-                .font(.system(size: 8, weight: .medium).width(.expanded))
-                .foregroundStyle(ink.glow2)
+                .font(.system(size: 9, weight: .semibold).width(.expanded))
+                .foregroundStyle(ink.text.opacity(0.75))
             HStack(alignment: .firstTextBaseline, spacing: 1) {
                 Text(value).font(.system(size: 26, weight: .bold)).monospacedDigit()
                 if let total {
@@ -163,9 +155,16 @@ struct NeonCard: View {
             .lineLimit(1)
             .minimumScaleFactor(0.6)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(ink.haze.opacity(0.45))
+            .padding(.horizontal, 16)
+            .padding(.top, 26)
+            .padding(.bottom, 16)
+            // Fades up into the card rather than sitting on a hard band.
+            .background(
+                LinearGradient(stops: [.init(color: ink.separation.opacity(0), location: 0),
+                                       .init(color: ink.separation.opacity(0.55), location: 0.45),
+                                       .init(color: ink.separation.opacity(0.9), location: 1)],
+                               startPoint: .top, endPoint: .bottom)
+            )
     }
 }
 
@@ -192,6 +191,12 @@ struct NeonInk {
     var haze: Color { Color(hue: shifted(-0.02), saturation: dark ? 0.85 : 0.3, brightness: dark ? 0.5 : 0.9) }
     // Everything written on the card.
     var text: Color { dark ? .white : Color(hue: 0.73, saturation: 0.85, brightness: 0.34) }
+    // The pin burns hotter than anything else on the card.
+    var pinLight: Color { Color(hue: accent, saturation: dark ? 0.55 : 0.8, brightness: 1) }
+    // What the date sits on, so it separates from the card without a hard edge.
+    var separation: Color {
+        dark ? Color(hue: 0.73, saturation: 0.95, brightness: 0.12) : Color(hue: 0.72, saturation: 0.3, brightness: 0.82)
+    }
     // Colour borrowed from the other mode, thrown across the ground so it is never flat.
     var splash: Color {
         dark ? Color(hue: 0.57, saturation: 0.4, brightness: 1) : Color(hue: 0.72, saturation: 0.9, brightness: 0.5)
@@ -228,19 +233,27 @@ private struct TickStrip: View {
     }
 }
 
-// The trip's letter, or a map pin, punched out of a field of dots. Which one is settled by the
-// trip's seed, so a card never changes.
+// A map pin punched out of a field of dots. The same mark on every card; what tells them apart
+// is the letter tiled behind and the accent.
 private struct DotMatrixMark: View {
     let trip: Trip
     let ink: NeonInk
 
-    private var showsPin: Bool { trip.textureSeed.isMultiple(of: 2) }
-
     var body: some View {
         GeometryReader { geometry in
-            dots
-                .mask(shape(in: geometry.size))
-                .frame(width: geometry.size.width, height: geometry.size.height)
+            let reach = min(geometry.size.width, geometry.size.height)
+            ZStack {
+                // A pool of light for the pin to stand in, so it is the first thing you see.
+                RadialGradient(colors: [ink.glow.opacity(ink.dark ? 0.6 : 0.45),
+                                        ink.glow.opacity(ink.dark ? 0.22 : 0.16),
+                                        .clear],
+                               center: .center, startRadius: 0, endRadius: reach * 0.68)
+                dots
+                    .mask(shape(in: geometry.size))
+                    .shadow(color: ink.glow.opacity(0.9), radius: 9)
+                    .shadow(color: ink.glow.opacity(0.5), radius: 20)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 10)
@@ -255,9 +268,9 @@ private struct DotMatrixMark: View {
                 var x: CGFloat = 0
                 while x < size.width {
                     // Brighter toward the top, so the matrix reads as lit rather than printed.
-                    let lift = 1 - (y / size.height) * 0.45
-                    context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 2.8, height: 2.8)),
-                                 with: .color(ink.glow.opacity(lift)))
+                    let lift = 1 - (y / size.height) * 0.3
+                    context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 3.1, height: 3.1)),
+                                 with: .color(ink.pinLight.opacity(lift)))
                     x += spacing
                 }
                 y += spacing
@@ -265,18 +278,11 @@ private struct DotMatrixMark: View {
         }
     }
 
-    @ViewBuilder
     private func shape(in size: CGSize) -> some View {
-        if showsPin {
-            Image(systemName: "mappin.and.ellipse")
-                .resizable()
-                .scaledToFit()
-                .frame(width: size.width, height: size.height)
-        } else {
-            Text(trip.initial)
-                .font(.system(size: size.height * 1.05, weight: .heavy).width(.expanded))
-                .frame(width: size.width, height: size.height)
-        }
+        Image(systemName: "mappin.and.ellipse")
+            .resizable()
+            .scaledToFit()
+            .frame(width: size.width, height: size.height)
     }
 }
 
@@ -326,6 +332,63 @@ private struct UltravioletLayer: View {
         .opacity(strength)
         .animation(.easeOut(duration: 0.15), value: strength)
         .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+// The place's letter, tiled small across the ground. Close to invisible on its own; it is there
+// to stop the card reading as a flat sheet of colour.
+private struct MonogramField: View {
+    let initial: String
+    let ink: NeonInk
+
+    var body: some View {
+        Canvas { context, size in
+            let glyph = context.resolve(
+                Text(initial)
+                    .font(.system(size: 22, weight: .black).width(.expanded))
+                    .foregroundStyle(ink.text.opacity(0.07))
+            )
+            let step: CGFloat = 54
+            var row = 0
+            var y: CGFloat = -step / 2
+            while y < size.height + step {
+                var x: CGFloat = row.isMultiple(of: 2) ? 0 : step / 2
+                while x < size.width + step {
+                    context.draw(glyph, at: CGPoint(x: x, y: y), anchor: .center)
+                    x += step
+                }
+                y += step * 0.8
+                row += 1
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+// The same two colours on every card, thrown across the ground differently each time. Where
+// they land and how hard they hit is fixed to the trip, so one card never looks like the next
+// and the set still looks like a set.
+private struct Splashes: View {
+    let trip: Trip
+    let ink: NeonInk
+
+    var body: some View {
+        GeometryReader { geometry in
+            let size = geometry.size
+            let reach = max(size.width, size.height)
+            var random = SeededRandom(seed: trip.textureSeed)
+            ZStack {
+                ForEach(0..<3, id: \.self) { index in
+                    let colour = index == 1 ? ink.glow : ink.splash
+                    let centre = UnitPoint(x: random.unit(), y: random.unit())
+                    let spread = reach * (0.35 + random.unit() * 0.55)
+                    let weight = 0.2 + random.unit() * 0.45
+                    RadialGradient(colors: [colour.opacity(weight), .clear],
+                                   center: centre, startRadius: 0, endRadius: spread)
+                }
+            }
+        }
         .accessibilityHidden(true)
     }
 }
