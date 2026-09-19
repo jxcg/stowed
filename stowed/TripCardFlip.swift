@@ -48,6 +48,7 @@ struct TripCardFlip<Front: View>: View {
 // The back of the card: what is in each bag, scrollable, with the return state where there is one.
 private struct PackedBack: View {
     let trip: Trip
+    @State private var phase: Double = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -92,8 +93,36 @@ private struct PackedBack: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 22))
-        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(.quaternary, lineWidth: 1))
+        // The rim borrowed from Siri: a soft spectrum turning slowly around the edge, bloomed
+        // outward so it reads as light on glass rather than a drawn line.
+        .overlay {
+            let shape = RoundedRectangle(cornerRadius: 22)
+            ZStack {
+                shape.strokeBorder(iridescence, lineWidth: 9).blur(radius: 11)
+                shape.strokeBorder(iridescence, lineWidth: 2.5).blur(radius: 1.5)
+                shape.strokeBorder(.white.opacity(0.35), lineWidth: 0.6)
+            }
+            .blendMode(.plusLighter)
+            .allowsHitTesting(false)
+        }
         .aspectRatio(0.72, contentMode: .fit)
+        .onAppear {
+            withAnimation(.linear(duration: 9).repeatForever(autoreverses: false)) { phase = 360 }
+        }
+    }
+
+    private var iridescence: AngularGradient {
+        AngularGradient(
+            colors: [Color(hue: 0.92, saturation: 0.45, brightness: 1),
+                     Color(hue: 0.06, saturation: 0.4, brightness: 1),
+                     Color(hue: 0.14, saturation: 0.35, brightness: 1),
+                     Color(hue: 0.45, saturation: 0.4, brightness: 1),
+                     Color(hue: 0.58, saturation: 0.45, brightness: 1),
+                     Color(hue: 0.74, saturation: 0.45, brightness: 1),
+                     Color(hue: 0.92, saturation: 0.45, brightness: 1)],
+            center: .center,
+            angle: .degrees(phase)
+        )
     }
 
     private func row(_ item: Item) -> some View {
