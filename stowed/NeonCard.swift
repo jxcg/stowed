@@ -38,7 +38,7 @@ struct NeonCard: View {
     var body: some View {
         VStack(spacing: 0) {
             TickStrip(ink: ink)
-            DotMatrixMark(trip: trip, ink: ink)
+            DotMatrixMark(trip: trip, ink: ink, ultraviolet: ultraviolet)
                 .frame(maxHeight: .infinity)
             if !chips.isEmpty { chipRow }
             Rectangle().fill(ink.glow.opacity(0.35)).frame(height: 1).padding(.horizontal, 14)
@@ -179,28 +179,29 @@ struct NeonInk {
 
     var ground: LinearGradient {
         let stops: [Color] = dark
-            ? [Color(hue: 0.70, saturation: 0.78, brightness: 0.46), Color(hue: 0.73, saturation: 0.94, brightness: 0.2)]
-            : [Color(hue: 0.57, saturation: 0.16, brightness: 1), Color(hue: 0.74, saturation: 0.22, brightness: 0.94)]
+            ? [Color(hue: 0.70, saturation: 0.55, brightness: 0.36), Color(hue: 0.73, saturation: 0.7, brightness: 0.16)]
+            : [Color(hue: 0.58, saturation: 0.1, brightness: 0.99), Color(hue: 0.73, saturation: 0.14, brightness: 0.92)]
         return LinearGradient(colors: stops, startPoint: .top, endPoint: .bottom)
     }
 
-    // The bright ink. Turned down by day so it still reads against a pale ground.
-    var glow: Color { Color(hue: accent, saturation: dark ? 0.8 : 0.9, brightness: dark ? 1 : 0.74) }
-    // The pale ink, a step along from the first.
-    var glow2: Color { Color(hue: shifted(0.05), saturation: dark ? 0.32 : 0.7, brightness: dark ? 1 : 0.62) }
-    var haze: Color { Color(hue: shifted(-0.02), saturation: dark ? 0.85 : 0.3, brightness: dark ? 0.5 : 0.9) }
-    // Everything written on the card.
-    var text: Color { dark ? .white : Color(hue: 0.73, saturation: 0.85, brightness: 0.34) }
-    // The pin burns hotter than anything else on the card.
-    var pinLight: Color { Color(hue: accent, saturation: dark ? 0.55 : 0.8, brightness: 1) }
-    // What the date sits on, so it separates from the card without a hard edge.
-    var separation: Color {
-        dark ? Color(hue: 0.73, saturation: 0.95, brightness: 0.12) : Color(hue: 0.72, saturation: 0.3, brightness: 0.82)
+    // Softened right down from the first pass. Neon that shouts does not age well.
+    var glow: Color { Color(hue: accent, saturation: dark ? 0.5 : 0.55, brightness: dark ? 0.86 : 0.6) }
+    var glow2: Color { Color(hue: shifted(0.05), saturation: dark ? 0.22 : 0.45, brightness: dark ? 0.95 : 0.55) }
+    var haze: Color { Color(hue: shifted(-0.02), saturation: dark ? 0.55 : 0.2, brightness: dark ? 0.44 : 0.92) }
+    var text: Color { dark ? .white : Color(hue: 0.73, saturation: 0.7, brightness: 0.3) }
+    // Brushed metal for the dot matrix: white through silver to steel, across the panel.
+    var metal: Gradient {
+        Gradient(colors: dark
+            ? [Color(white: 1), Color(white: 0.78), Color(white: 0.92), Color(white: 0.6)]
+            : [Color(white: 0.98), Color(white: 0.62), Color(white: 0.85), Color(white: 0.45)])
     }
-    // Colour borrowed from the other mode, thrown across the ground so it is never flat.
     var splash: Color {
-        dark ? Color(hue: 0.57, saturation: 0.4, brightness: 1) : Color(hue: 0.72, saturation: 0.9, brightness: 0.5)
+        dark ? Color(hue: 0.57, saturation: 0.3, brightness: 0.9) : Color(hue: 0.72, saturation: 0.5, brightness: 0.62)
     }
+    var separation: Color {
+        dark ? Color(hue: 0.73, saturation: 0.8, brightness: 0.1) : Color(hue: 0.72, saturation: 0.2, brightness: 0.8)
+    }
+
     // The rim runs from the accent into its deepened neighbour. Neighbours sit together.
     var rim: LinearGradient {
         LinearGradient(colors: [Color(hue: accent, saturation: dark ? 0.42 : 0.5, brightness: dark ? 0.82 : 0.9),
@@ -238,26 +239,37 @@ private struct TickStrip: View {
 private struct DotMatrixMark: View {
     let trip: Trip
     let ink: NeonInk
+    // The pin is lit in its own right; under the blacklight it lights harder still.
+    var ultraviolet: Double = 0
 
     var body: some View {
         GeometryReader { geometry in
             let reach = min(geometry.size.width, geometry.size.height)
             ZStack {
                 // A pool of light for the pin to stand in, so it is the first thing you see.
-                RadialGradient(colors: [ink.glow.opacity(ink.dark ? 0.6 : 0.45),
-                                        ink.glow.opacity(ink.dark ? 0.22 : 0.16),
+                RadialGradient(colors: [ink.glow.opacity((ink.dark ? 0.34 : 0.25) + ultraviolet * 0.25),
+                                        ink.glow.opacity((ink.dark ? 0.14 : 0.1) + ultraviolet * 0.15),
                                         .clear],
-                               center: .center, startRadius: 0, endRadius: reach * 0.68)
+                               center: .center, startRadius: 0, endRadius: reach * (0.68 + ultraviolet * 0.18))
                 dots
                     .mask(shape(in: geometry.size))
-                    .shadow(color: ink.glow.opacity(0.9), radius: 9)
-                    .shadow(color: ink.glow.opacity(0.5), radius: 20)
+                    .shadow(color: .white.opacity(ink.dark ? 0.5 : 0.25), radius: 7 + ultraviolet * 8)
+                    .shadow(color: ink.glow.opacity(0.35 + ultraviolet * 0.35), radius: 18 + ultraviolet * 14)
+                    .brightness(ultraviolet * 0.18)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 10)
+        .animation(.easeOut(duration: 0.15), value: ultraviolet)
         .accessibilityHidden(true)
+    }
+
+    // One gradient across the whole matrix, so the dots catch the light like brushed metal.
+    private func sheen(_ size: CGSize) -> GraphicsContext.Shading {
+        .linearGradient(ink.metal,
+                        startPoint: CGPoint(x: 0, y: 0),
+                        endPoint: CGPoint(x: size.width * 0.4, y: size.height))
     }
 
     private var dots: some View {
@@ -267,10 +279,7 @@ private struct DotMatrixMark: View {
             while y < size.height {
                 var x: CGFloat = 0
                 while x < size.width {
-                    // Brighter toward the top, so the matrix reads as lit rather than printed.
-                    let lift = 1 - (y / size.height) * 0.3
-                    context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 3.1, height: 3.1)),
-                                 with: .color(ink.pinLight.opacity(lift)))
+                    context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 3.1, height: 3.1)), with: sheen(size))
                     x += spacing
                 }
                 y += spacing
@@ -278,8 +287,13 @@ private struct DotMatrixMark: View {
         }
     }
 
+    // Eight marks, one per trip by its seed, so a shelf of cards is not eight of the same icon.
+    private static let symbols = ["mappin.and.ellipse", "airplane", "globe.europe.africa.fill",
+                                  "suitcase.fill", "map.fill", "mountain.2.fill",
+                                  "building.2.fill", "ferry.fill"]
+
     private func shape(in size: CGSize) -> some View {
-        Image(systemName: "mappin.and.ellipse")
+        Image(systemName: Self.symbols[Int(trip.textureSeed % UInt64(Self.symbols.count))])
             .resizable()
             .scaledToFit()
             .frame(width: size.width, height: size.height)
@@ -379,11 +393,11 @@ private struct Splashes: View {
             let reach = max(size.width, size.height)
             var random = SeededRandom(seed: trip.textureSeed)
             ZStack {
-                ForEach(0..<3, id: \.self) { index in
+                ForEach(0..<2, id: \.self) { index in
                     let colour = index == 1 ? ink.glow : ink.splash
                     let centre = UnitPoint(x: random.unit(), y: random.unit())
                     let spread = reach * (0.35 + random.unit() * 0.55)
-                    let weight = 0.2 + random.unit() * 0.45
+                    let weight = 0.12 + random.unit() * 0.24
                     RadialGradient(colors: [colour.opacity(weight), .clear],
                                    center: centre, startRadius: 0, endRadius: spread)
                 }

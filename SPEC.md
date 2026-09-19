@@ -163,13 +163,14 @@ where they conflict.
 29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
     the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.
 30. **A second card style is under comparison: neon.** One base for every card, two modes:
-    pale blue into lavender by day, deep indigo by night. Only the accent changes from trip to trip,
+    pale blue into lavender by day, deep indigo by night. The colours are muted rather than
+    fluorescent, so they age. Only the accent changes from trip to trip,
     and there are three: cyan, violet, magenta. More than that and the set stops looking like
     a set. The ground carries the same two splash colours on every card, thrown across it
     differently each time and fixed to the trip, the place's own letter tiled small
     across the ground, and grain over the lot, so it never reads as flat. A 4pt rim running from the
-    accent into its deepened neighbour with a fine grain along it, a map pin punched out of a dot matrix on every card, lit from behind and
-    glowing so it is the first thing you see, a tick strip along the top, a row of packed emoji,
+    accent into its deepened neighbour with a fine grain along it, one of eight marks punched out of a brushed-metal dot matrix, lit from
+    behind so it leads the card and burning harder under the blacklight, a tick strip along the top, a row of packed emoji,
     stats under wide labels, and the dates along the bottom. The place name is set in SF
     Extended. Nothing is borrowed from any particular app. One of the two styles goes once
     chosen.
