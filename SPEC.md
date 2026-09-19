@@ -145,6 +145,11 @@ where they conflict.
 25. **New-trip presets.** Chips above the name field: your previous trip names first, then a
     short curated list of cities, deduplicated and capped at eight. Tapping one fills the name
     only; typing still works. No network, no place search.
+26. **Visual bag view.** A bag screen toggle between the list and a drawn bag: the trip's
+    palette, grain and texture in a suitcase shape with a handle and latches, items as emoji
+    inside. Same data, no new model fields. During the return check, tapping an item ticks it;
+    confirmed is told apart by opacity, a tick glyph, sitting upright rather than tilted, and a
+    ring, so colour is never the only signal.
 
 On-device only. One user, local persistence, no account, no network.
 

@@ -5,6 +5,8 @@ import SwiftUI
 struct BagDetailView: View {
     @Environment(\.modelContext) private var context
     let bag: Bag
+    // Same items, two presentations (decision 26). Remembered across bags and launches.
+    @AppStorage("bagView") private var visual = false
     @State private var newName = ""
     @State private var itemToEdit: Item?
     @FocusState private var addFieldFocused: Bool
@@ -13,6 +15,35 @@ struct BagDetailView: View {
     private var sortedItems: [Item] { bag.items.sorted { $0.addedAt < $1.addedAt } }
 
     var body: some View {
+        Group {
+            if visual { visualBag } else { list }
+        }
+        .navigationTitle("\(bag.emoji) \(bag.name)")
+        .toolbar {
+            Picker("View", selection: $visual) {
+                Label("List", systemImage: "list.bullet").tag(false)
+                Label("Bag", systemImage: "bag.fill").tag(true)
+            }
+            .pickerStyle(.segmented)
+        }
+        .sheet(item: $itemToEdit) { ItemForm(item: $0) }
+    }
+
+    // Tap an item to edit it, or to tick it off once the return check has started.
+    private var visualBag: some View {
+        ScrollView {
+            BagVisualView(bag: bag) { item in
+                if bag.trip?.hasStartedReturn == true, item.returning {
+                    item.toggleReturnConfirmed()
+                } else {
+                    itemToEdit = item
+                }
+            }
+            .padding()
+        }
+    }
+
+    private var list: some View {
         List {
             if bag.items.isEmpty {
                 ContentUnavailableView(
@@ -47,8 +78,6 @@ struct BagDetailView: View {
                 }
             }
         }
-        .navigationTitle("\(bag.emoji) \(bag.name)")
-        .sheet(item: $itemToEdit) { ItemForm(item: $0) }
     }
 
     private func addItem() {
@@ -64,11 +93,18 @@ struct BagDetailView: View {
 private struct ItemRow: View {
     @Bindable var item: Item
     let onTap: () -> Void
+    // The bag view shows ticks during the return check, so the list shows them too.
+    private var checking: Bool { item.bag?.trip?.hasStartedReturn ?? false }
 
     var body: some View {
         HStack {
             Button(action: onTap) {
                 HStack {
+                    if checking, item.returning {
+                        Image(systemName: item.isReturnConfirmed ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(item.isReturnConfirmed ? Color.accentColor : Color.secondary)
+                            .accessibilityLabel(item.isReturnConfirmed ? "Confirmed" : "Not yet verified")
+                    }
                     Text(item.emoji).saturation(item.returning ? 1 : 0)
                     VStack(alignment: .leading) {
                         Text(item.name)
