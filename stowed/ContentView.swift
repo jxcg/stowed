@@ -18,13 +18,9 @@ struct ContentView: View {
     @State private var isAdding = false
     @State private var tripToDelete: Trip?
 
-    // Upcoming trips first, soonest at the front. Undated and past trips after, newest first.
+    // Most recent first, oldest last, in both views (decision 27).
     private var orderedTrips: [Trip] {
-        let today = Calendar.current.startOfDay(for: .now)
-        let upcoming = trips.filter { ($0.endDate ?? $0.startDate ?? .distantPast) >= today }
-            .sorted { ($0.startDate ?? .distantFuture) < ($1.startDate ?? .distantFuture) }
-        let rest = trips.filter { !upcoming.contains($0) }
-        return upcoming + rest
+        trips.sorted { ($0.startDate ?? $0.createdAt) > ($1.startDate ?? $1.createdAt) }
     }
 
     var body: some View {

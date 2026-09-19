@@ -150,6 +150,11 @@ where they conflict.
     inside. Same data, no new model fields. During the return check, tapping an item ticks it;
     confirmed is told apart by opacity, a tick glyph, sitting upright rather than tilted, and a
     ring, so colour is never the only signal.
+27. **Trips are ordered most recent first** in both views: the newest trip is the top card of
+    the deck and the first card of the stack, the oldest is at the bottom. The deck draws the
+    pack imperfectly, each card behind the top one offset and angled by an amount fixed to that
+    trip, with its own shadow, and a pile shadow that deepens with the number of trips. Swiping
+    either way takes the top card off and reveals the next.
 
 On-device only. One user, local persistence, no account, no network.
 
