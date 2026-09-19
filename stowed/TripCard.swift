@@ -7,6 +7,8 @@ struct TripCard: View {
     let trip: Trip
     var tilt: CGSize = .zero
     var holographic = false
+    // Passport is the plain printed card; metal adds chrome, seams and a specular band.
+    var style: CardStyle = .metal
     @Environment(\.colorScheme) private var scheme
 
     private var ink: NeonInk { NeonInk(accent: trip.cardPalette.neonAccent, dark: scheme == .dark) }
@@ -87,15 +89,36 @@ struct TripCard: View {
         ZStack {
             ink.ground
             Splashes(trip: trip, ink: ink)
-            // The metal and its seam, the same treatment as the card back.
-            Chrome(phase: seamPhase, dark: dark).opacity(dark ? 0.22 : 0.16).blendMode(.overlay)
-            PrismSeam(phase: seamPhase).opacity(0.75)
+            if style == .metal { metalwork }
             MonogramField(initial: trip.initial, ink: ink)
-            grain.resizable(resizingMode: .tile)
-                .opacity(dark ? 0.11 : 0.15)
-                .blendMode(dark ? .overlay : .multiply)
+            if style == .passport {
+                grain.resizable(resizingMode: .tile)
+                    .opacity(dark ? 0.11 : 0.15)
+                    .blendMode(dark ? .overlay : .multiply)
+            }
         }
         .accessibilityHidden(true)
+    }
+
+    // Brushed metal, two seams refracting across it, and a hard specular band the way light
+    // runs off something polished.
+    private var metalwork: some View {
+        ZStack {
+            Chrome(phase: seamPhase, dark: dark)
+                .opacity(dark ? 0.5 : 0.38)
+                .blendMode(.overlay)
+            PrismSeam(phase: seamPhase)
+            PrismSeam(phase: 1 - seamPhase)
+                .scaleEffect(y: -1)
+                .opacity(0.5)
+            LinearGradient(stops: [.init(color: .clear, location: 0.3),
+                                   .init(color: .white.opacity(dark ? 0.16 : 0.3), location: 0.47),
+                                   .init(color: .white.opacity(dark ? 0.03 : 0.08), location: 0.53),
+                                   .init(color: .clear, location: 0.7)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+                .offset(x: tilt.width * 4, y: tilt.height * 4)
+                .blendMode(.plusLighter)
+        }
     }
 
     private var chipRow: some View {
@@ -372,4 +395,10 @@ private struct Splashes: View {
         }
         .accessibilityHidden(true)
     }
+}
+
+// Two ways to print the same card (decision 28).
+enum CardStyle: String, CaseIterable {
+    case passport, metal
+    var title: String { self == .passport ? "Passport" : "Metal" }
 }
