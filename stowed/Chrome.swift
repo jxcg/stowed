@@ -158,15 +158,17 @@ struct BeadBlastSteel: View {
                 .opacity(0.13)
                 .blendMode(.overlay)
 
-            // Light landing on the sheet, warm from one side and cool from the other. It moves
-            // with the phone, which is what makes the finish read as metal.
-            RadialGradient(colors: [warm.opacity(0.55), .clear],
-                           center: .init(x: 0.12 + tilt.width * 0.012, y: 0.1 + tilt.height * 0.012),
-                           startRadius: 0, endRadius: 320)
+            // Light landing on the sheet, warm from one side and cool from the other. Turning
+            // the phone does not only move them: it opens them up, so each finish shows its
+            // own colour when you catch it against the light.
+            let lift = min(1, hypot(tilt.width, tilt.height) / 9)
+            RadialGradient(colors: [warm.opacity(0.4 + lift * 0.45), .clear],
+                           center: .init(x: 0.12 + tilt.width * 0.016, y: 0.1 + tilt.height * 0.016),
+                           startRadius: 0, endRadius: 320 + lift * 90)
                 .blendMode(.plusLighter)
-            RadialGradient(colors: [cool.opacity(0.46), .clear],
-                           center: .init(x: 0.9 - tilt.width * 0.012, y: 0.82 - tilt.height * 0.012),
-                           startRadius: 0, endRadius: 300)
+            RadialGradient(colors: [cool.opacity(0.32 + lift * 0.4), .clear],
+                           center: .init(x: 0.9 - tilt.width * 0.016, y: 0.82 - tilt.height * 0.016),
+                           startRadius: 0, endRadius: 300 + lift * 90)
                 .blendMode(.plusLighter)
 
             // The shoulder of white that slides across as you turn it.
