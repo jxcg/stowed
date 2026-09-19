@@ -66,6 +66,23 @@ enum CardPalette: String, CaseIterable {
         )
     }
 
+    // The other card style's colourway: ten hues, one per palette, spread right across the
+    // spectrum. The gradient is built the same way for all of them.
+    var neonHue: Double {
+        switch self {
+        case .oxblood: 0.95    // rose
+        case .navy: 0.66       // indigo
+        case .forest: 0.38     // spring
+        case .plum: 0.80       // violet
+        case .slate: 0.58      // azure
+        case .rust: 0.04       // coral
+        case .teal: 0.48       // cyan
+        case .charcoal: 0.72   // ultraviolet
+        case .ochre: 0.12      // amber
+        case .bordeaux: 0.88   // magenta
+        }
+    }
+
     // The card's edge, seen under the face.
     var stock: Color { Color(hue: hue, saturation: saturation * 0.5, brightness: 0.3) }
 }

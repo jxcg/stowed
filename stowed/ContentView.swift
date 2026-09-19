@@ -18,8 +18,8 @@ enum TripsView: String, CaseIterable {
 
 // ponytail: two card styles up for comparison (#66). One goes once the owner picks.
 enum CardStyle: String, CaseIterable {
-    case playing, passport
-    var title: String { self == .playing ? "Playing card" : "Passport" }
+    case playing, neon
+    var title: String { self == .playing ? "Playing card" : "Neon" }
 }
 
 struct ContentView: View {
@@ -112,7 +112,7 @@ struct ContentView: View {
             Group {
                 switch cardStyle {
                 case .playing: TripCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning)
-                case .passport: PassportCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning)
+                case .neon: NeonCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning)
                 }
             }
             .padding(.horizontal, 22)
