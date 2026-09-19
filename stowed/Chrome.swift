@@ -172,8 +172,9 @@ struct BeadBlastSteel: View {
                 .blendMode(.plusLighter)
 
             // The shoulder of white that slides across as you turn it.
+            let hard = min(1, max(0, (hypot(tilt.width, tilt.height) - 6) / 4))
             LinearGradient(stops: [.init(color: .clear, location: 0.18),
-                                   .init(color: .white.opacity(0.5), location: 0.44),
+                                   .init(color: .white.opacity(0.5 + hard * 0.3), location: 0.44),
                                    .init(color: .white.opacity(0.08), location: 0.56),
                                    .init(color: .black.opacity(0.14), location: 1)],
                            startPoint: .topLeading, endPoint: .bottomTrailing)
