@@ -123,6 +123,19 @@ struct BeadBlastSteel: View {
     }
 }
 
+// The tilt a card should draw itself at. The deck hands the live value to the card on top and
+// zero to the ones behind, so a motion tick redraws one card instead of five.
+private struct CardTiltKey: EnvironmentKey {
+    static let defaultValue: CGSize = .zero
+}
+
+extension EnvironmentValues {
+    var cardTilt: CGSize {
+        get { self[CardTiltKey.self] }
+        set { self[CardTiltKey.self] = newValue }
+    }
+}
+
 // How much of the card's security printing is showing. The deck raises it as a card is thrown,
 // so a hard swipe flashes what a tilt would otherwise have to reveal.
 private struct CardRevealKey: EnvironmentKey {

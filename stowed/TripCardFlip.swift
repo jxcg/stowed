@@ -5,7 +5,7 @@ import SwiftUI
 struct TripCardFlip<Front: View>: View {
     let trip: Trip
     let onEdit: () -> Void
-    var tilt: CGSize = .zero
+    @Environment(\.cardTilt) private var tilt
     @ViewBuilder let front: () -> Front
     @State private var turned = false
 
@@ -14,21 +14,21 @@ struct TripCardFlip<Front: View>: View {
             front()
                 .opacity(turned ? 0 : 1)
                 .accessibilityHidden(turned)
-            PackedBack(trip: trip)
-                .opacity(turned ? 1 : 0)
-                .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
-                .accessibilityHidden(!turned)
+            if turned {
+                PackedBack(trip: trip)
+                    .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
+            }
         }
         .rotation3DEffect(.degrees(turned ? 180 : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.45)
         .animation(.snappy(duration: 0.45), value: turned)
-        .overlay(alignment: .topTrailing) {
+        .overlay(alignment: .bottomTrailing) {
             // They sit on the card, so they ride with it rather than floating above.
             buttons.offset(x: tilt.width * 0.5, y: tilt.height * 0.5)
         }
     }
 
     private var buttons: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             control(turned ? "arrow.uturn.backward" : "list.bullet",
                     label: turned ? "Back to the card" : "Quick view") { turned.toggle() }
             control("pencil", label: "Edit trip", action: onEdit)
@@ -39,13 +39,39 @@ struct TripCardFlip<Front: View>: View {
     private func control(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.primary)
-                .frame(width: 32, height: 32)
-                .background(.regularMaterial, in: Circle())
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.secondary)
+                // Cut into the surface rather than printed on it: dark where the tool went in,
+                // a catch of light on the far lip.
+                .shadow(color: .white.opacity(0.7), radius: 0, y: 0.7)
+                .frame(width: 38, height: 38)
+                .background { well }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
+    }
+
+    // A shallow well pressed into the card: shadow along the top edge, light along the bottom,
+    // and no fill of its own beyond a slight darkening, so the card shows through it.
+    private var well: some View {
+        Circle()
+            .fill(.black.opacity(0.05))
+            .overlay {
+                Circle()
+                    .stroke(.black.opacity(0.4), lineWidth: 1.6)
+                    .blur(radius: 1.6)
+                    .mask(Circle().fill(LinearGradient(colors: [.black, .clear],
+                                                       startPoint: .top, endPoint: .bottom)))
+            }
+            .overlay {
+                Circle()
+                    .stroke(.white.opacity(0.9), lineWidth: 1.6)
+                    .blur(radius: 1.4)
+                    .mask(Circle().fill(LinearGradient(colors: [.clear, .black],
+                                                       startPoint: .top, endPoint: .bottom)))
+            }
+            .clipShape(Circle())
+            .drawingGroup()
     }
 }
 
