@@ -158,8 +158,9 @@ where they conflict.
 28. **One card, printed two ways.** The playing card is gone. What is left is a muted ground
     carrying splashes, the trip's mark punched out of metal dots, the place in SF Extended,
     stats under wide labels, the dates along the bottom, and a 4pt rim running into the
-    neighbouring hue. **Passport** prints it plain, with grain. **Metal** adds brushed chrome,
-    two prismatic seams and a specular band that follows the tilt. Switched from the trips
+    neighbouring hue. **Passport** prints it plain, with grain. **Metal** adds real brushed metal, two rakes of
+    striation at different angles over chrome, two prismatic seams, and a specular band that
+    follows the tilt. Switched from the trips
     menu.
 29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
     the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.

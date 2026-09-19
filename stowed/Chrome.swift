@@ -72,3 +72,20 @@ private func tile(size: Int, pixel: (Int, Int) -> UInt8) -> Image {
     )!
     return Image(decorative: cgImage, scale: 1)
 }
+
+// Brushed metal: noise that varies across the grain but never along it, so tiling it gives
+// continuous striations rather than sand. Made once.
+let brushed: Image = {
+    let size = 128
+    let row = (0..<size).map { _ in UInt8.random(in: 96...210) }
+    var pixels = [UInt8]()
+    pixels.reserveCapacity(size * size)
+    for _ in 0..<size { pixels.append(contentsOf: row) }
+    let provider = CGDataProvider(data: Data(pixels) as CFData)!
+    let cgImage = CGImage(
+        width: size, height: size, bitsPerComponent: 8, bitsPerPixel: 8, bytesPerRow: size,
+        space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue),
+        provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent
+    )!
+    return Image(decorative: cgImage, scale: 1)
+}()

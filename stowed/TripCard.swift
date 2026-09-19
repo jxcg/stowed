@@ -105,14 +105,27 @@ struct TripCard: View {
     private var metalwork: some View {
         ZStack {
             Chrome(phase: seamPhase, dark: dark)
-                .opacity(dark ? 0.5 : 0.38)
+                .opacity(dark ? 0.55 : 0.42)
                 .blendMode(.overlay)
+            // The brush itself: fine striations raked across the surface.
+            brushed.resizable(resizingMode: .tile)
+                .opacity(dark ? 0.35 : 0.3)
+                .blendMode(.overlay)
+                .rotationEffect(.degrees(28))
+                .scaleEffect(1.8)
+                .blur(radius: 0.4)
+            // A second, coarser rake at a different angle, which is what stops it looking printed.
+            brushed.resizable(resizingMode: .tile)
+                .opacity(0.18)
+                .blendMode(.softLight)
+                .rotationEffect(.degrees(24))
+                .scaleEffect(x: 3.4, y: 1.8)
             PrismSeam(phase: seamPhase)
             PrismSeam(phase: 1 - seamPhase)
                 .scaleEffect(y: -1)
                 .opacity(0.5)
             LinearGradient(stops: [.init(color: .clear, location: 0.3),
-                                   .init(color: .white.opacity(dark ? 0.16 : 0.3), location: 0.47),
+                                   .init(color: .white.opacity(dark ? 0.18 : 0.32), location: 0.47),
                                    .init(color: .white.opacity(dark ? 0.03 : 0.08), location: 0.53),
                                    .init(color: .clear, location: 0.7)],
                            startPoint: .topLeading, endPoint: .bottomTrailing)
