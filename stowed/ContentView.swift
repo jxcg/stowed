@@ -34,6 +34,7 @@ struct ContentView: View {
     @State private var motion = MotionReader()
     @State private var isAdding = false
     @State private var tripToDelete: Trip?
+    @State private var openTrip: Trip?
 
     // Most recent first, oldest last, in both views (decision 27).
     private var orderedTrips: [Trip] {
@@ -59,7 +60,7 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("Trips")
-            .navigationDestination(for: Trip.self) { TripDetailView(trip: $0) }
+            .navigationDestination(item: $openTrip) { TripDetailView(trip: $0) }
             .toolbar {
                 Menu("More", systemImage: "ellipsis") {
                     Picker("View", selection: $view) {
@@ -109,19 +110,19 @@ struct ContentView: View {
 
     private func card(_ trip: Trip) -> some View {
         // Inset a little so a card never fills the screen edge to edge, and the pile behind shows.
-        NavigationLink(value: trip) {
-            Group {
+        TripCardFlip(trip: trip, onEdit: { openTrip = trip }) {
+            Button { openTrip = trip } label: {
                 switch cardStyle {
                 case .playing: TripCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning)
                 case .neon: NeonCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning)
                 }
             }
-            .padding(.horizontal, 22)
-        }
             .buttonStyle(.plain)
-            .contextMenu {
-                Button("Delete", systemImage: "trash", role: .destructive) { tripToDelete = trip }
-            }
+        }
+        .padding(.horizontal, 22)
+        .contextMenu {
+            Button("Delete", systemImage: "trash", role: .destructive) { tripToDelete = trip }
+        }
     }
 }
 

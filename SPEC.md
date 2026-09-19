@@ -180,6 +180,11 @@ where they conflict.
     the stock, a dashed thread down one side, and the trip's letter watermarked across the
     middle, plus a slick of spectrum sweeping across like a holographic patch. It all fades
     back to nothing when the phone is held still. The playing card gets the spectrum band only.
+32. **Cards have a back.** Two buttons sit in the corner of every card, above the turn so they
+    never flip with it. Quick view turns the card over to everything packed, grouped by bag and
+    scrollable, with the return ticks where a return has started. Edit opens the trip. Tapping
+    the card itself still opens the trip. The back is glass with a soft spectrum turning slowly
+    around its rim, after the Siri treatment in iOS 27.
 
 On-device only. One user, local persistence, no account, no network.
 
