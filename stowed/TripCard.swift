@@ -1,8 +1,8 @@
 import SwiftUI
 
 // A playing card (decisions 20, 21): one deep colour from a curated palette, darker toward the
-// edges, grain heaviest in the middle, its own texture and a double rule, a foil frame, the initial
-// and suit in two corners, a monogram watermark, no emoji.
+// edges, grain heaviest in the middle, its own texture, a bevelled window in a hard-edged foil frame,
+// the initial and suit in two corners, a monogram pressed into the stock.
 struct TripCard: View {
     let trip: Trip
     var tilt: CGSize = .zero
@@ -19,16 +19,35 @@ struct TripCard: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 28).fill(palette.frameGradient)
-            art.clipShape(RoundedRectangle(cornerRadius: 18)).padding(13)
-            // Double hairline rule just inside the frame.
-            RoundedRectangle(cornerRadius: 15).strokeBorder(.white.opacity(0.22), lineWidth: 1).padding(17)
+            // The card has thickness: a darker slab sits just under the face.
+            RoundedRectangle(cornerRadius: 26).fill(palette.stock).offset(y: 2.5)
 
-            // Monogram watermark.
-            Text(trip.initial)
-                .font(.system(size: 220, weight: .bold, design: .serif))
-                .opacity(0.1)
-                .accessibilityHidden(true)
+            RoundedRectangle(cornerRadius: 26).fill(palette.frameGradient)
+            // Rim light along the top edge, the way light catches a real card.
+            RoundedRectangle(cornerRadius: 26)
+                .strokeBorder(LinearGradient(colors: [.white.opacity(0.65), .clear], startPoint: .top, endPoint: .center), lineWidth: 1)
+
+            art
+                .clipShape(RoundedRectangle(cornerRadius: 19))
+                // Bevel: dark where the window is cut, light on the far side, so the face sits down inside the frame.
+                .overlay(
+                    RoundedRectangle(cornerRadius: 19)
+                        .strokeBorder(
+                            LinearGradient(colors: [.black.opacity(0.5), .black.opacity(0.1), .white.opacity(0.3)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing),
+                            lineWidth: 1.5
+                        )
+                )
+                .padding(9)
+
+            RoundedRectangle(cornerRadius: 15).strokeBorder(.white.opacity(0.22), lineWidth: 1).padding(15)
+
+            // Monogram, pressed into the card rather than printed on it.
+            ZStack {
+                monogram.foregroundStyle(.black.opacity(0.13)).offset(y: 2)
+                monogram.foregroundStyle(.white.opacity(0.1)).offset(y: -1.5)
+            }
+            .accessibilityHidden(true)
 
             VStack(spacing: 8) {
                 Text(trip.name)
@@ -49,8 +68,8 @@ struct TripCard: View {
                     .tracking(3)
                     .opacity(0.85)
             }
-            .padding(.horizontal, 44)
-            .padding(.vertical, 40)
+            .padding(.horizontal, 40)
+            .padding(.vertical, 36)
 
             cornerMark
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -59,10 +78,21 @@ struct TripCard: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
         }
         .foregroundStyle(.white)
-        .shadow(color: .black.opacity(0.25), radius: 1)
+        // Letterpress: everything white is cut into the surface, dark below and a hint of light above.
+        .shadow(color: .black.opacity(0.55), radius: 0.5, y: 1)
+        .shadow(color: .white.opacity(0.18), radius: 0.5, y: -0.5)
         .aspectRatio(0.72, contentMode: .fit)
-        .shadow(color: .black.opacity(0.18), radius: 10, y: 6)
+        // A real card lying on a surface casts two shadows: a tight contact one and a soft ambient one.
+        .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+        .shadow(color: .black.opacity(0.2), radius: 16, y: 11)
+        // With the motion effect on, the card itself turns to the light.
+        .rotation3DEffect(.degrees(-tilt.height * 0.35), axis: (x: 1, y: 0, z: 0))
+        .rotation3DEffect(.degrees(tilt.width * 0.35), axis: (x: 0, y: 1, z: 0))
         .accessibilityElement(children: .combine)
+    }
+
+    private var monogram: some View {
+        Text(trip.initial).font(.system(size: 220, weight: .bold, design: .serif))
     }
 
     // Single hue radial, the trip's texture, a sheen that follows the tilt, a faint shimmer,
