@@ -234,25 +234,21 @@ private struct TickStrip: View {
     }
 }
 
-// A map pin punched out of a field of dots. The same mark on every card; what tells them apart
-// is the letter tiled behind and the accent.
+// The trip's mark, lit from behind so it leads the card and burning harder under the blacklight.
 private struct DotMatrixMark: View {
     let trip: Trip
     let ink: NeonInk
-    // The pin is lit in its own right; under the blacklight it lights harder still.
     var ultraviolet: Double = 0
 
     var body: some View {
         GeometryReader { geometry in
             let reach = min(geometry.size.width, geometry.size.height)
             ZStack {
-                // A pool of light for the pin to stand in, so it is the first thing you see.
                 RadialGradient(colors: [ink.glow.opacity((ink.dark ? 0.34 : 0.25) + ultraviolet * 0.25),
                                         ink.glow.opacity((ink.dark ? 0.14 : 0.1) + ultraviolet * 0.15),
                                         .clear],
                                center: .center, startRadius: 0, endRadius: reach * (0.68 + ultraviolet * 0.18))
-                dots
-                    .mask(shape(in: geometry.size))
+                DotMatrix(symbol: TripSymbol.forTrip(trip), metal: ink.metal)
                     .shadow(color: .white.opacity(ink.dark ? 0.5 : 0.25), radius: 7 + ultraviolet * 8)
                     .shadow(color: ink.glow.opacity(0.35 + ultraviolet * 0.35), radius: 18 + ultraviolet * 14)
                     .brightness(ultraviolet * 0.18)
@@ -263,40 +259,6 @@ private struct DotMatrixMark: View {
         .padding(.vertical, 10)
         .animation(.easeOut(duration: 0.15), value: ultraviolet)
         .accessibilityHidden(true)
-    }
-
-    // One gradient across the whole matrix, so the dots catch the light like brushed metal.
-    private func sheen(_ size: CGSize) -> GraphicsContext.Shading {
-        .linearGradient(ink.metal,
-                        startPoint: CGPoint(x: 0, y: 0),
-                        endPoint: CGPoint(x: size.width * 0.4, y: size.height))
-    }
-
-    private var dots: some View {
-        Canvas { context, size in
-            let spacing: CGFloat = 6
-            var y: CGFloat = 0
-            while y < size.height {
-                var x: CGFloat = 0
-                while x < size.width {
-                    context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 3.1, height: 3.1)), with: sheen(size))
-                    x += spacing
-                }
-                y += spacing
-            }
-        }
-    }
-
-    // Eight marks, one per trip by its seed, so a shelf of cards is not eight of the same icon.
-    private static let symbols = ["mappin.and.ellipse", "airplane", "globe.europe.africa.fill",
-                                  "suitcase.fill", "map.fill", "mountain.2.fill",
-                                  "building.2.fill", "ferry.fill"]
-
-    private func shape(in size: CGSize) -> some View {
-        Image(systemName: Self.symbols[Int(trip.textureSeed % UInt64(Self.symbols.count))])
-            .resizable()
-            .scaledToFit()
-            .frame(width: size.width, height: size.height)
     }
 }
 

@@ -155,11 +155,12 @@ where they conflict.
     pack imperfectly, each card behind the top one offset and angled by an amount fixed to that
     trip, with its own shadow, and a pile shadow that deepens with the number of trips. Swiping
     either way takes the top card off and reveals the next.
-28. **The card is a physical object.** A slim frame in a hard-banded foil gradient, light and
-    dark turning abruptly across the diagonal rather than blending; the face bevelled down
-    inside it; a darker slab of stock showing under the edge; a tight contact shadow plus a
-    soft ambient one; every white mark letterpressed; the monogram pressed into the stock. With
-    the motion effect on the card turns on both axes with the phone. No pattern on the border.
+28. **The playing card is metal and light.** A slim frame in a hard-banded foil gradient in the
+    trip's palette; the face a chrome ground with one prismatic seam across it, the same
+    treatment as the card back; the trip's mark punched out of metal in the middle; the initial
+    and suit in two corners; a small-caps footer; grain over the lot. Letterpressed text, a
+    darker slab of stock under the edge, a contact shadow and an ambient one. With the motion
+    effect on the card turns on both axes and catches a spectrum band.
 29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
     the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.
 30. **A second card style is under comparison: neon.** One base for every card, two modes:
