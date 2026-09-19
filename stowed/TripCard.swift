@@ -117,16 +117,7 @@ struct TripCard: View {
     // so it costs one draw however large the card gets, and the colour is light landing on it
     // rather than paint laid over it.
     private var metalwork: some View {
-        ZStack {
-            BeadBlastSteel(tilt: tilt, warm: ink.glow, cool: ink.glow2)
-            SteelFacets(trip: trip, showing: extremeTilt)
-        }
-    }
-
-    // Only once the card is well off square. Small angles leave the surface plain.
-    private var extremeTilt: Double {
-        guard holographic else { return 0 }
-        return min(1, max(0, (hypot(tilt.width, tilt.height) - 7) / 3.5))
+        BeadBlastSteel(tilt: tilt, warm: ink.glow, cool: ink.glow2)
     }
 
     private var chipRow: some View {
@@ -538,52 +529,5 @@ nonisolated private struct Arc: Shape {
         path.addQuadCurve(to: CGPoint(x: rect.maxX, y: rect.midY - 5),
                           control: CGPoint(x: rect.midX, y: rect.midY + 12))
         return path
-    }
-}
-
-// Facets caught in the sheet: a few small squares that only answer once the card is turned
-// well off square, throwing back its own colour. Nothing to see at ordinary angles.
-private struct SteelFacets: View {
-    let trip: Trip
-    let showing: Double
-
-    // A facet does not show you a colour, it shows you a smear of the spectrum. Each one runs
-    // through three neighbouring hues rather than sitting on a single flat one.
-    private static func band(_ index: Int) -> LinearGradient {
-        let hues = [0.0, 0.09, 0.16, 0.35, 0.53, 0.62, 0.78]
-        let stops = (0..<3).map { step -> Color in
-            Color(hue: hues[(index + step) % hues.count], saturation: 0.38, brightness: 1)
-        }
-        return LinearGradient(colors: stops, startPoint: .topLeading, endPoint: .bottomTrailing)
-    }
-
-    var body: some View {
-        GeometryReader { geometry in
-            let size = geometry.size
-            var random = SeededRandom(seed: trip.textureSeed)
-            ZStack {
-                ForEach(0..<7, id: \.self) { index in
-                    let side = 12 + random.unit() * 18
-                    RoundedRectangle(cornerRadius: side / 3)
-                        .fill(Self.band(index))
-                        // Stretched the way a reflection is, not square like a sticker.
-                        .frame(width: side * 1.9, height: side * 0.75)
-                        .rotationEffect(.degrees(random.unit() * 90 - 45))
-                        // They open out as the card turns further, the way a reflection spreads
-                        // as the angle widens.
-                        .scaleEffect(0.7 + showing * 0.6)
-                        .blur(radius: 5)
-                        .position(x: random.unit() * size.width, y: random.unit() * size.height)
-                        .opacity(0.55 + random.unit() * 0.45)
-                }
-            }
-            // Multiply tints the sheet without covering it: the colour reads as something the
-            // metal is doing to the light, not a shape laid over the top. Overlay does nothing
-            // at all this close to white.
-            .blendMode(.multiply)
-            .opacity(showing * 0.55)
-            .animation(.easeOut(duration: 0.2), value: showing)
-        }
-        .accessibilityHidden(true)
     }
 }
