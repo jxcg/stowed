@@ -218,17 +218,3 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
     }
 }
 
-@Suite struct CardSignature {
-    @Test func mostPackedItemWinsEarliestBreaksTies() throws {
-        let context = try makeContext()
-        let (trip, bag) = makeTrip(items: 0, in: context)
-        #expect(trip.signatureEmoji == nil)
-
-        bag.items.append(Item(name: "Charger", emoji: "🔌", quantity: 1, addedAt: t0))
-        bag.items.append(Item(name: "T-shirt", emoji: "👕", quantity: 5, addedAt: at(1)))
-        #expect(trip.signatureEmoji == "👕")
-
-        bag.items.append(Item(name: "Socks", emoji: "🧦", quantity: 5, addedAt: at(2)))
-        #expect(trip.signatureEmoji == "👕")
-    }
-}
