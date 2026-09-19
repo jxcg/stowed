@@ -87,7 +87,7 @@ struct NeonCard: View {
             Splashes(trip: trip, ink: ink)
             MonogramField(initial: trip.initial, ink: ink)
             grain.resizable(resizingMode: .tile)
-                .opacity(dark ? 0.22 : 0.3)
+                .opacity(dark ? 0.11 : 0.15)
                 .blendMode(dark ? .overlay : .multiply)
         }
         .accessibilityHidden(true)
@@ -126,6 +126,7 @@ struct NeonCard: View {
             }
         }
         .foregroundStyle(ink.text)
+        .shadow(color: (dark ? Color.black : Color.white).opacity(0.55), radius: 4)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
         .padding(.top, 12)
@@ -135,8 +136,8 @@ struct NeonCard: View {
     private func stat(_ label: String, _ value: String, of total: Int? = nil) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(label)
-                .font(.system(size: 8, weight: .medium).width(.expanded))
-                .foregroundStyle(ink.glow2)
+                .font(.system(size: 9, weight: .semibold).width(.expanded))
+                .foregroundStyle(ink.text.opacity(0.75))
             HStack(alignment: .firstTextBaseline, spacing: 1) {
                 Text(value).font(.system(size: 26, weight: .bold)).monospacedDigit()
                 if let total {
@@ -155,11 +156,13 @@ struct NeonCard: View {
             .minimumScaleFactor(0.6)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
-            .padding(.top, 22)
-            .padding(.bottom, 14)
-            // Fades up into the card instead of sitting on a hard band.
+            .padding(.top, 26)
+            .padding(.bottom, 16)
+            // Fades up into the card rather than sitting on a hard band.
             .background(
-                LinearGradient(colors: [ink.haze.opacity(0), ink.haze.opacity(0.5)],
+                LinearGradient(stops: [.init(color: ink.separation.opacity(0), location: 0),
+                                       .init(color: ink.separation.opacity(0.55), location: 0.45),
+                                       .init(color: ink.separation.opacity(0.9), location: 1)],
                                startPoint: .top, endPoint: .bottom)
             )
     }
@@ -190,6 +193,10 @@ struct NeonInk {
     var text: Color { dark ? .white : Color(hue: 0.73, saturation: 0.85, brightness: 0.34) }
     // The pin burns hotter than anything else on the card.
     var pinLight: Color { Color(hue: accent, saturation: dark ? 0.55 : 0.8, brightness: 1) }
+    // What the date sits on, so it separates from the card without a hard edge.
+    var separation: Color {
+        dark ? Color(hue: 0.73, saturation: 0.95, brightness: 0.12) : Color(hue: 0.72, saturation: 0.3, brightness: 0.82)
+    }
     // Colour borrowed from the other mode, thrown across the ground so it is never flat.
     var splash: Color {
         dark ? Color(hue: 0.57, saturation: 0.4, brightness: 1) : Color(hue: 0.72, saturation: 0.9, brightness: 0.5)
