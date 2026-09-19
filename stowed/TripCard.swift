@@ -117,7 +117,16 @@ struct TripCard: View {
     // so it costs one draw however large the card gets, and the colour is light landing on it
     // rather than paint laid over it.
     private var metalwork: some View {
-        BeadBlastSteel(tilt: tilt, warm: ink.glow, cool: ink.glow2)
+        ZStack {
+            BeadBlastSteel(tilt: tilt, warm: ink.glow, cool: ink.glow2)
+            SteelFacets(trip: trip, colour: ink.facet, showing: extremeTilt)
+        }
+    }
+
+    // Only once the card is well off square. Small angles leave the surface plain.
+    private var extremeTilt: Double {
+        guard holographic else { return 0 }
+        return min(1, max(0, (hypot(tilt.width, tilt.height) - 7) / 3.5))
     }
 
     private var chipRow: some View {
@@ -244,6 +253,10 @@ struct NeonInk {
     var splash: Color {
         pearl ? Color(hue: shifted(0.1), saturation: 0.22, brightness: 0.98)
               : (dark ? Color(hue: 0.57, saturation: 0.3, brightness: 0.9) : Color(hue: 0.72, saturation: 0.5, brightness: 0.62))
+    }
+    // What the facets throw back. Light blue, leaning the way the finish does.
+    var facet: Color {
+        pearl ? Color(hue: finish == .champagne ? 0.5 : 0.55, saturation: 0.45, brightness: 0.97) : glow2
     }
     var separation: Color {
         pearl ? Color(white: 0.86) : (dark ? Color(hue: 0.73, saturation: 0.8, brightness: 0.1) : Color(hue: 0.72, saturation: 0.2, brightness: 0.8))
@@ -529,5 +542,35 @@ nonisolated private struct Arc: Shape {
         path.addQuadCurve(to: CGPoint(x: rect.maxX, y: rect.midY - 5),
                           control: CGPoint(x: rect.midX, y: rect.midY + 12))
         return path
+    }
+}
+
+// Facets caught in the sheet: a few small squares that only answer once the card is turned
+// well off square, throwing back its own colour. Nothing to see at ordinary angles.
+private struct SteelFacets: View {
+    let trip: Trip
+    let colour: Color
+    let showing: Double
+
+    var body: some View {
+        GeometryReader { geometry in
+            let size = geometry.size
+            var random = SeededRandom(seed: trip.textureSeed)
+            ZStack {
+                ForEach(0..<6, id: \.self) { _ in
+                    let side = 10 + random.unit() * 16
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(colour)
+                        .frame(width: side, height: side)
+                        .rotationEffect(.degrees(random.unit() * 60 - 30))
+                        .position(x: random.unit() * size.width, y: random.unit() * size.height)
+                        .opacity(0.4 + random.unit() * 0.35)
+                        .blur(radius: 0.5)
+                }
+            }
+            .opacity(showing * 0.75)
+            .animation(.easeOut(duration: 0.2), value: showing)
+        }
+        .accessibilityHidden(true)
     }
 }
