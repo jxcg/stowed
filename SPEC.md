@@ -161,7 +161,9 @@ where they conflict.
 28. **One card, printed two ways.** The playing card is gone. What is left is a muted ground
     carrying splashes, the trip's mark punched out of metal dots, the place in SF Extended,
     stats under wide labels, the dates along the bottom, and a 4pt rim running into the
-    neighbouring hue. **Passport** prints it plain, with grain. **Metal** is a sheet of brushed steel: a tonal
+    neighbouring hue. **Passport** prints it plain, with grain. **Metal** comes in three finishes, silver, titanium and
+    champagne, fixed to the trip. The sheet is the same grey in all three; only the colour of
+    the light landing on it changes. It is a sheet of brushed steel: a tonal
     sweep from a bright shoulder into shadow, raked twice with fine striation, a broad
     highlight that follows the tilt, and only a whisper of colour. No tiled letter. The same
     rake is laid over the passport print, so both share a surface. Switched from the trips

@@ -15,7 +15,10 @@ struct TripCard: View {
     // ponytail: three shapes up for comparison. Two get deleted once one is chosen.
     @AppStorage("dividerShape") private var dividerShape = DividerShape.crease
 
-    private var ink: NeonInk { NeonInk(accent: trip.cardPalette.neonAccent, dark: scheme == .dark, pearl: style == .metal) }
+    private var ink: NeonInk {
+        NeonInk(accent: trip.cardPalette.neonAccent, dark: scheme == .dark,
+                pearl: style == .metal, finish: trip.cardPalette.metalFinish)
+    }
 
     private var days: Int? {
         guard let start = trip.startDate, let end = trip.endDate else { return nil }
@@ -200,6 +203,7 @@ struct NeonInk {
     let dark: Bool
     // The metal print is pearl: near-white, whatever the system scheme is.
     var pearl = false
+    var finish: MetalFinish = .silver
 
     private func shifted(_ amount: Double) -> Double { (accent + amount + 1).truncatingRemainder(dividingBy: 1) }
 
@@ -216,11 +220,11 @@ struct NeonInk {
     }
 
     var glow: Color {
-        pearl ? Color(hue: shifted(0.04), saturation: 0.16, brightness: 0.88)
+        pearl ? finish.warm
               : Color(hue: accent, saturation: dark ? 0.5 : 0.55, brightness: dark ? 0.86 : 0.6)
     }
     var glow2: Color {
-        pearl ? Color(hue: shifted(0.3), saturation: 0.14, brightness: 0.92)
+        pearl ? finish.cool
               : Color(hue: shifted(0.05), saturation: dark ? 0.22 : 0.45, brightness: dark ? 0.95 : 0.55)
     }
     var haze: Color {
@@ -426,13 +430,6 @@ private struct Splashes: View {
     let trip: Trip
     let ink: NeonInk
 
-    // Blush, lavender, aqua and sage, all barely there.
-    private static let pearlShift = [
-        Color(hue: 0.98, saturation: 0.18, brightness: 0.98),
-        Color(hue: 0.72, saturation: 0.16, brightness: 0.98),
-        Color(hue: 0.50, saturation: 0.18, brightness: 0.98),
-        Color(hue: 0.28, saturation: 0.16, brightness: 0.96),
-    ]
 
     var body: some View {
         GeometryReader { geometry in
@@ -441,7 +438,7 @@ private struct Splashes: View {
             var random = SeededRandom(seed: trip.textureSeed)
             ZStack {
                 ForEach(0..<4, id: \.self) { index in
-                    let colour = ink.pearl ? Self.pearlShift[index] : (index == 1 ? ink.glow : ink.splash)
+                    let colour = ink.pearl ? ink.finish.wash[index] : (index == 1 ? ink.glow : ink.splash)
                     let centre = UnitPoint(x: random.unit(), y: random.unit())
                     let spread = reach * (0.35 + random.unit() * 0.55)
                     let weight = 0.12 + random.unit() * 0.24
