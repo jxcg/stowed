@@ -154,24 +154,35 @@ where they conflict.
     the deck and the first card of the stack, the oldest is at the bottom. The deck draws the
     pack imperfectly, each card behind the top one offset and angled by an amount fixed to that
     trip, with its own shadow, and a pile shadow that deepens with the number of trips. Swiping
-    either way takes the top card off and reveals the next.
-28. **There is one card.** The playing card is gone; what is left is metal and light: a muted
-    ground carrying splashes, a prismatic seam across it, brushed metal over the lot, the
-    trip's mark punched out of metal dots, the place in SF Extended, stats under wide labels,
-    the dates along the bottom, and a 4pt rim running into the neighbouring hue.
+    either way takes the top card off and reveals the next. A card thrown hard leaves faster and
+    further than one nudged, the way inertia scrolling carries a flick. Under the deck sits a
+    run of dots you can drag along to travel it; only a window of dots is drawn however many
+    trips there are.
+28. **One card, printed two ways.** The playing card is gone. What is left is a muted ground
+    carrying splashes, the trip's mark punched out of metal dots, the place in SF Extended,
+    stats under wide labels, the dates along the bottom, and a 4pt rim running into the
+    neighbouring hue. **Passport** prints it plain, with grain. **Metal** comes in three finishes, silver, titanium and
+    champagne, fixed to the trip. The sheet is the same grey in all three; only the colour of
+    the light landing on it changes. It is a sheet of brushed steel: a tonal
+    sweep from a bright shoulder into shadow, raked twice with fine striation, a broad
+    highlight that follows the tilt, and only a whisper of colour. No tiled letter. The same
+    rake is laid over the passport print, so both share a surface. Switched from the trips
+    menu.
 29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
     the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.
 30. **One base for every card, two modes**: pale blue into lavender by day, deep indigo by
     night. The colours are muted rather than fluorescent, so they age. Three accents only:
     cyan, violet, magenta. The ground carries the same two splash colours on every card, thrown
-    across it differently each time and fixed to the trip, the place's letter tiled small, and
-    grain over the lot.
-31. **Under the light, the neon card fluoresces and catches a rainbow.** With the motion effect on, tilting the
+    across it differently each time and fixed to the trip, and the place's letter tiled small.
+31. **The card is plain until it is moved.** Its security printing stays hidden at rest; a tilt
+    brings it up, and so does a throw, in proportion to how hard the card was swiped.
+    **Under the light, the card fluoresces and catches a rainbow.** With the motion effect on, tilting the
     phone brings up security printing the way ultraviolet does on a banknote: fibres through
     the stock, a dashed thread down one side, and the trip's letter watermarked across the
     middle, plus a slick of spectrum sweeping across like a holographic patch. It all fades
     back to nothing when the phone is held still. The playing card gets the spectrum band only.
-32. **Cards have a back.** Two buttons sit in the corner of every card, above the turn so they
+32. **Cards have a back.** A faint wash of light sits behind the trip's name and is gone by
+    the time the list starts, with the same marker as the front. Two buttons sit in the corner of every card, above the turn so they
     never flip with it. Quick view turns the card over to everything packed, grouped by bag and
     scrollable, with the return ticks where a return has started. Edit opens the trip. Tapping
     the card itself still opens the trip. The back is quiet brushed metal with a

@@ -25,6 +25,8 @@ struct ContentView: View {
     @AppStorage("motionEffect") private var motionEffect = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var motion = MotionReader()
+    @AppStorage("cardStyle") private var cardStyle = CardStyle.metal
+    @AppStorage("dividerShape") private var dividerShape = DividerShape.crease
     @State private var isAdding = false
     @State private var tripToDelete: Trip?
     @State private var openTrip: Trip?
@@ -58,6 +60,12 @@ struct ContentView: View {
                 Menu("More", systemImage: "ellipsis") {
                     Picker("View", selection: $view) {
                         ForEach(TripsView.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                    Picker("Divider", selection: $dividerShape) {
+                        ForEach(DividerShape.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                    Picker("Card", selection: $cardStyle) {
+                        ForEach(CardStyle.allCases, id: \.self) { Text($0.title).tag($0) }
                     }
                     Toggle("Motion effect", isOn: $motionEffect)
                 }
@@ -102,7 +110,7 @@ struct ContentView: View {
         // Inset a little so a card never fills the screen edge to edge, and the pile behind shows.
         TripCardFlip(trip: trip, onEdit: { openTrip = trip }) {
             Button { openTrip = trip } label: {
-                TripCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning)
+                TripCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning, style: cardStyle)
             }
             .buttonStyle(.plain)
         }
