@@ -108,7 +108,7 @@ struct ContentView: View {
 
     private func card(_ trip: Trip) -> some View {
         // Inset a little so a card never fills the screen edge to edge, and the pile behind shows.
-        TripCardFlip(trip: trip, onEdit: { openTrip = trip }) {
+        TripCardFlip(trip: trip, onEdit: { openTrip = trip }, tilt: motion.tilt) {
             Button { openTrip = trip } label: {
                 TripCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning, style: cardStyle)
             }
