@@ -41,8 +41,8 @@ struct TripCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            TickStrip(ink: ink)
-            DotMatrixMark(trip: trip, ink: ink, ultraviolet: ultraviolet)
+            TickStrip(ink: ink, ultraviolet: ultraviolet)
+            DotMatrixMark(trip: trip, ink: ink, tilt: tilt, ultraviolet: ultraviolet)
                 .frame(maxHeight: .infinity)
             if !chips.isEmpty { chipRow }
             Rectangle().fill(ink.glow.opacity(0.35)).frame(height: 1).padding(.horizontal, 14)
@@ -52,7 +52,7 @@ struct TripCard: View {
         .background(backdrop)
         // Tilt it under the light and the security printing answers, the way a banknote does,
         // with a slick of spectrum across it like the holographic patch on the same note.
-        .overlay(UltravioletLayer(trip: trip, ink: ink, strength: ultraviolet))
+        .overlay(UltravioletLayer(trip: trip, ink: ink, strength: ultraviolet * (ink.pearl ? 0.3 : 1)))
         .overlay {
             if holographic {
                 LinearGradient(colors: [.red, .yellow, .green, .cyan, .blue, .purple],
@@ -254,23 +254,40 @@ struct NeonInk {
 // A thin run of ticks along the top edge, alternating between the two inks.
 private struct TickStrip: View {
     let ink: NeonInk
+    var ultraviolet: Double = 0
+
+    // Neutral in the hand. Under the light it answers, the way the thread in a banknote does.
+    private var lit: Color { Color(hue: 0.74, saturation: 0.55, brightness: 1) }
 
     var body: some View {
-        Canvas { context, size in
-            var x: CGFloat = 0
-            var index = 0
-            while x < size.width {
-                let tall = index.isMultiple(of: 4)
-                let height: CGFloat = tall ? 10 : 5
-                context.fill(Path(CGRect(x: x, y: (size.height - height) / 2, width: 2, height: height)),
-                             with: .color(tall ? ink.glow : ink.glow2.opacity(0.7)))
-                x += 7
-                index += 1
+        HStack(spacing: 8) {
+            Canvas { context, size in
+                var x: CGFloat = 0
+                var index = 0
+                while x < size.width {
+                    let tall = index.isMultiple(of: 4)
+                    let height: CGFloat = tall ? 10 : 5
+                    let plain = ink.text.opacity(tall ? 0.34 : 0.2)
+                    let colour = ultraviolet > 0
+                        ? plain.mix(with: tall ? lit : ink.glow2, by: ultraviolet)
+                        : plain
+                    context.fill(Path(CGRect(x: x, y: (size.height - height) / 2, width: 2, height: height)),
+                                 with: .color(colour))
+                    x += 7
+                    index += 1
+                }
             }
+            // The mark that only the light brings up. The same one on every card.
+            Image(systemName: "sparkles")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(lit)
+                .opacity(ultraviolet)
+                .shadow(color: lit.opacity(ultraviolet * 0.8), radius: 5)
         }
         .frame(height: 16)
         .padding(.horizontal, 12)
         .padding(.top, 8)
+        .animation(.easeOut(duration: 0.15), value: ultraviolet)
         .accessibilityHidden(true)
     }
 }
@@ -279,20 +296,34 @@ private struct TickStrip: View {
 private struct DotMatrixMark: View {
     let trip: Trip
     let ink: NeonInk
+    var tilt: CGSize = .zero
     var ultraviolet: Double = 0
 
     var body: some View {
         GeometryReader { geometry in
             let reach = min(geometry.size.width, geometry.size.height)
             ZStack {
-                RadialGradient(colors: [ink.glow.opacity((ink.dark ? 0.34 : 0.25) + ultraviolet * 0.25),
-                                        ink.glow.opacity((ink.dark ? 0.14 : 0.1) + ultraviolet * 0.15),
+                RadialGradient(colors: [ink.glow.opacity((ink.pearl ? 0.16 : (ink.dark ? 0.34 : 0.25)) + ultraviolet * (ink.pearl ? 0.1 : 0.25)),
+                                        ink.glow.opacity((ink.pearl ? 0.07 : (ink.dark ? 0.14 : 0.1)) + ultraviolet * 0.08),
                                         .clear],
                                center: .center, startRadius: 0, endRadius: reach * (0.68 + ultraviolet * 0.18))
                 DotMatrix(symbol: TripSymbol.forTrip(trip), metal: ink.metal)
-                    .shadow(color: .white.opacity(ink.dark ? 0.5 : 0.25), radius: 7 + ultraviolet * 8)
-                    .shadow(color: ink.glow.opacity(0.35 + ultraviolet * 0.35), radius: 18 + ultraviolet * 14)
-                    .brightness(ultraviolet * 0.18)
+                    // A specular sweep of its own, so the mark catches the light before the
+                    // surface does and stands clear of the texture.
+                    .overlay {
+                        LinearGradient(stops: [.init(color: .clear, location: 0.3),
+                                               .init(color: .white.opacity(ink.pearl ? 0.3 : 0.85), location: 0.48),
+                                               .init(color: .clear, location: 0.66)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                            .offset(x: -tilt.width * 7, y: -tilt.height * 7)
+                            .blendMode(.plusLighter)
+                            .mask(DotMatrix(symbol: TripSymbol.forTrip(trip), metal: ink.metal))
+                    }
+                    // Lifted off the sheet: its own contact shadow, thrown opposite the tilt.
+                    .shadow(color: .black.opacity(0.3), radius: 3, x: -tilt.width * 0.5, y: 2 - tilt.height * 0.5)
+                    .shadow(color: .white.opacity(ink.pearl ? 0.12 : (ink.dark ? 0.5 : 0.3)), radius: 7 + ultraviolet * 6)
+                    .shadow(color: ink.glow.opacity(ink.pearl ? 0.2 : 0.35 + ultraviolet * 0.35), radius: 18 + ultraviolet * 10)
+                    .brightness(ultraviolet * (ink.pearl ? 0.04 : 0.18))
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
@@ -328,6 +359,9 @@ private struct UltravioletLayer: View {
                 let tint = random.unit() > 0.5 ? ink.text : fluorescence
                 context.stroke(fibre, with: .color(tint.opacity(0.55 + random.unit() * 0.45)), lineWidth: 1.1)
             }
+
+            // On a pale sheet the fibres are enough; a thread and a watermark just burn out.
+            guard !ink.pearl else { return }
 
             // The thread, dashed, running the height of the card.
             let threadX = size.width * 0.82

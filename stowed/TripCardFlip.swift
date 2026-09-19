@@ -53,16 +53,32 @@ private struct PackedBack: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(trip.name.uppercased())
-                    .font(.system(size: 15, weight: .semibold).width(.expanded))
-                Text("\(trip.bags.count) bags · \(trip.items.count) items")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(trip.name.uppercased())
+                        .font(.system(size: 15, weight: .semibold).width(.expanded))
+                    Text("\(trip.bags.count) bags · \(trip.items.count) items")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                // The marker the light brings up, as on the front.
+                Image(systemName: "sparkles")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color(hue: 0.74, saturation: 0.55, brightness: 1))
+                    .opacity(0.5)
             }
             .padding(.horizontal, 18)
             .padding(.top, 18)
             .padding(.bottom, 12)
+            // A wash of light behind the name only, gone by the time the list starts.
+            .background {
+                LinearGradient(stops: [.init(color: Color(hue: 0.78, saturation: 0.28, brightness: 1).opacity(0.3), location: 0),
+                                       .init(color: Color(hue: 0.9, saturation: 0.2, brightness: 1).opacity(0.14), location: 0.5),
+                                       .init(color: .clear, location: 1)],
+                               startPoint: .top, endPoint: .bottom)
+                .blendMode(.plusLighter)
+            }
 
             if trip.items.isEmpty {
                 Text("Nothing packed yet")
