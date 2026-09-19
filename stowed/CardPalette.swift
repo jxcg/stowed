@@ -40,13 +40,34 @@ enum CardPalette: String, CaseIterable {
     var centre: Color { Color(hue: hue, saturation: saturation, brightness: 0.5) }
     var edge: Color { Color(hue: hue, saturation: min(1, saturation + 0.1), brightness: 0.24) }
 
+    // Hard-edged metal: light, dark, light, dark across the diagonal, with abrupt turns rather
+    // than a smooth blend. That is what makes it read as foil instead of paint.
     var frameGradient: LinearGradient {
-        let colors: [Color] = switch frame {
-        case .tone: [Color(hue: hue, saturation: saturation * 0.25, brightness: 0.99), Color(hue: hue, saturation: saturation * 0.85, brightness: 0.62)]
-        case .gold: [Color(hue: 0.13, saturation: 0.35, brightness: 0.99), Color(hue: 0.09, saturation: 0.85, brightness: 0.58)]
+        let pale: Color, deep: Color
+        switch frame {
+        case .tone:
+            pale = Color(hue: hue, saturation: saturation * 0.2, brightness: 1)
+            deep = Color(hue: hue, saturation: min(1, saturation + 0.1), brightness: 0.45)
+        case .gold:
+            pale = Color(hue: 0.14, saturation: 0.25, brightness: 1)
+            deep = Color(hue: 0.08, saturation: 0.95, brightness: 0.45)
         }
-        return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+        return LinearGradient(
+            stops: [
+                .init(color: pale, location: 0),
+                .init(color: deep, location: 0.2),
+                .init(color: pale, location: 0.38),
+                .init(color: pale, location: 0.46),
+                .init(color: deep, location: 0.66),
+                .init(color: pale, location: 0.86),
+                .init(color: deep, location: 1),
+            ],
+            startPoint: .topLeading, endPoint: .bottomTrailing
+        )
     }
+
+    // The card's edge, seen under the face.
+    var stock: Color { Color(hue: hue, saturation: saturation * 0.5, brightness: 0.3) }
 }
 
 // One suit per trip, picked at random and kept. The pip in the corners.

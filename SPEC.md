@@ -155,9 +155,11 @@ where they conflict.
     pack imperfectly, each card behind the top one offset and angled by an amount fixed to that
     trip, with its own shadow, and a pile shadow that deepens with the number of trips. Swiping
     either way takes the top card off and reveals the next.
-28. **The card border is a plain gradient band.** Slim, and running from a light tone to a
-    deep one so it reads as a gradient rather than a flat edge. No pattern and no emoji on it;
-    the face carries the detail.
+28. **The card is a physical object.** A slim frame in a hard-banded foil gradient, light and
+    dark turning abruptly across the diagonal rather than blending; the face bevelled down
+    inside it; a darker slab of stock showing under the edge; a tight contact shadow plus a
+    soft ambient one; every white mark letterpressed; the monogram pressed into the stock. With
+    the motion effect on the card turns on both axes with the phone. No pattern on the border.
 29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
     the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.
 
