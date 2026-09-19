@@ -89,3 +89,95 @@ let brushed: Image = {
     )!
     return Image(decorative: cgImage, scale: 1)
 }()
+
+// Brushed steel. A tonal sweep from a bright shoulder down into shadow, raked with fine
+// striation, then a broad highlight across it. Neutral, and the same technique whether it is
+// the surface of a card or a texture laid over one.
+struct BrushedSteel: View {
+    var tilt: CGSize = .zero
+    var tone: Double = 1          // 1 is the full steel sheet; lower lays it over something else.
+    var angle: Double = 24
+
+    var body: some View {
+        ZStack {
+            LinearGradient(stops: [
+                .init(color: Color(white: 0.93), location: 0),
+                .init(color: Color(white: 0.74), location: 0.18),
+                .init(color: Color(white: 0.86), location: 0.3),
+                .init(color: Color(white: 0.52), location: 0.55),
+                .init(color: Color(white: 0.63), location: 0.72),
+                .init(color: Color(white: 0.34), location: 1),
+            ], startPoint: .top, endPoint: .bottom)
+            .opacity(tone)
+
+            // The rake. Fine, and tight to the grain.
+            brushed.resizable(resizingMode: .tile)
+                .opacity(0.55)
+                .blendMode(.overlay)
+                .rotationEffect(.degrees(angle))
+                .scaleEffect(x: 1.1, y: 2.6)
+            brushed.resizable(resizingMode: .tile)
+                .opacity(0.3)
+                .blendMode(.softLight)
+                .rotationEffect(.degrees(angle - 3))
+                .scaleEffect(x: 4.5, y: 1.4)
+                .blur(radius: 0.6)
+
+            // The broad shoulder of light that makes it look turned toward you.
+            LinearGradient(stops: [.init(color: .white.opacity(0.5), location: 0),
+                                   .init(color: .clear, location: 0.42),
+                                   .init(color: .black.opacity(0.22), location: 1)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+                .offset(x: tilt.width * 3, y: tilt.height * 3)
+                .blendMode(.overlay)
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+// A rolled-in, bead-blasted finish: fine even grain rather than directional scratches, under a
+// broad sweep of light. One noise tile and three gradients, so it is cheap to draw and cheap to
+// animate; nothing here is blurred or sampled per frame.
+struct BeadBlastSteel: View {
+    var tilt: CGSize = .zero
+    var warm: Color = .orange
+    var cool: Color = .blue
+
+    var body: some View {
+        ZStack {
+            LinearGradient(stops: [
+                .init(color: Color(white: 0.88), location: 0),
+                .init(color: Color(white: 0.79), location: 0.35),
+                .init(color: Color(white: 0.66), location: 0.62),
+                .init(color: Color(white: 0.74), location: 0.85),
+                .init(color: Color(white: 0.58), location: 1),
+            ], startPoint: .topLeading, endPoint: .bottomTrailing)
+
+            // The blast. Barely there, and the same in every direction.
+            grain.resizable(resizingMode: .tile)
+                .opacity(0.13)
+                .blendMode(.overlay)
+
+            // Light landing on the sheet, warm from one side and cool from the other. It moves
+            // with the phone, which is what makes the finish read as metal.
+            RadialGradient(colors: [warm.opacity(0.4), .clear],
+                           center: .init(x: 0.12 + tilt.width * 0.012, y: 0.1 + tilt.height * 0.012),
+                           startRadius: 0, endRadius: 320)
+                .blendMode(.plusLighter)
+            RadialGradient(colors: [cool.opacity(0.32), .clear],
+                           center: .init(x: 0.9 - tilt.width * 0.012, y: 0.82 - tilt.height * 0.012),
+                           startRadius: 0, endRadius: 300)
+                .blendMode(.plusLighter)
+
+            // The shoulder of white that slides across as you turn it.
+            LinearGradient(stops: [.init(color: .clear, location: 0.18),
+                                   .init(color: .white.opacity(0.5), location: 0.44),
+                                   .init(color: .white.opacity(0.08), location: 0.56),
+                                   .init(color: .black.opacity(0.14), location: 1)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+                .offset(x: tilt.width * 5, y: tilt.height * 5)
+                .blendMode(.overlay)
+        }
+        .accessibilityHidden(true)
+    }
+}

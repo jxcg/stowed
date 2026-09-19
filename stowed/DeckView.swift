@@ -38,13 +38,24 @@ struct DeckView<Card: View>: View {
                 DragGesture(minimumDistance: 24)
                     .onChanged { drag = $0.translation }
                     .onEnded { value in
-                        guard abs(value.translation.width) > 100, trips.count > 1 else {
+                        // How hard it was thrown, not just how far. A flick and a shove should
+                        // not leave at the same speed.
+                        let throwSpeed = hypot(value.predictedEndTranslation.width - value.translation.width,
+                                               value.predictedEndTranslation.height - value.translation.height)
+                        let committed = abs(value.translation.width) > 100 || throwSpeed > 180
+                        guard committed, trips.count > 1 else {
                             withAnimation(.bouncy) { drag = .zero }
                             return
                         }
-                        // Either direction takes the top card off and reveals the next.
-                        withAnimation(.snappy) { drag = CGSize(width: value.translation.width * 4, height: 0) }
-                        withAnimation(.snappy.delay(0.15)) {
+                        // Carry the throw through: a harder swipe flies further and settles sooner.
+                        let effort = min(1.6, 0.35 + throwSpeed / 900)
+                        let exit = value.predictedEndTranslation.width == 0
+                            ? value.translation.width * 3
+                            : value.predictedEndTranslation.width * 1.6
+                        withAnimation(.interpolatingSpring(stiffness: 120 + effort * 130, damping: 18)) {
+                            drag = CGSize(width: exit, height: value.predictedEndTranslation.height * 0.6)
+                        }
+                        withAnimation(.snappy(duration: 0.34 - Double(effort) * 0.12).delay(0.08)) {
                             topIndex += 1
                             drag = .zero
                         }
@@ -53,9 +64,7 @@ struct DeckView<Card: View>: View {
             .padding(.top, 40)
 
             if trips.count > 1 {
-                Text("\(trips.count) trips. Swipe either way for the next.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                DeckDots(count: trips.count, index: topIndex % trips.count) { topIndex = $0 }
             }
         }
         .padding()
@@ -79,5 +88,55 @@ private struct Lie {
         angle = (random.unit() * 2 - 1) * (2.5 + Double(depth) * 1.6)
         x = (random.unit() * 2 - 1) * (7 + spread * 7)
         y = -spread * 13 + (random.unit() * 2 - 1) * 5
+    }
+}
+
+// A run of dots you can drag along to travel the deck, like a photo pager. However many trips
+// there are, only a window of dots is drawn; the rest exist, they just are not painted.
+private struct DeckDots: View {
+    let count: Int
+    let index: Int
+    let move: (Int) -> Void
+
+    private static var window: Int { 9 }
+
+    // The slice of dots around wherever you are.
+    private var range: Range<Int> {
+        guard count > Self.window else { return 0..<count }
+        let start = min(max(0, index - Self.window / 2), count - Self.window)
+        return start..<(start + Self.window)
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            HStack(spacing: 7) {
+                ForEach(range, id: \.self) { dot in
+                    let here = dot == index
+                    // Dots shrink toward the ends, so the run looks like it continues past them.
+                    let edge = min(dot - range.lowerBound, range.upperBound - 1 - dot)
+                    Circle()
+                        .fill(here ? Color.primary : Color.secondary.opacity(0.4))
+                        .frame(width: here ? 8 : max(3, 6 - CGFloat(max(0, 1 - edge)) * 2),
+                               height: here ? 8 : max(3, 6 - CGFloat(max(0, 1 - edge)) * 2))
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        // Hold at either end and it keeps travelling.
+                        let reach = max(1, geometry.size.width)
+                        let share = min(max(0, value.location.x / reach), 1)
+                        move(Int(round(share * Double(count - 1))))
+                    }
+            )
+            .animation(.snappy(duration: 0.2), value: index)
+        }
+        .frame(height: 22)
+        .accessibilityLabel("Trip \(index + 1) of \(count)")
+        .accessibilityAdjustableAction { direction in
+            move(direction == .increment ? min(count - 1, index + 1) : max(0, index - 1))
+        }
     }
 }

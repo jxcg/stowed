@@ -11,7 +11,7 @@ struct TripCard: View {
     var style: CardStyle = .metal
     @Environment(\.colorScheme) private var scheme
 
-    private var ink: NeonInk { NeonInk(accent: trip.cardPalette.neonAccent, dark: scheme == .dark) }
+    private var ink: NeonInk { NeonInk(accent: trip.cardPalette.neonAccent, dark: scheme == .dark, pearl: style == .metal) }
 
     private var days: Int? {
         guard let start = trip.startDate, let end = trip.endDate else { return nil }
@@ -77,7 +77,7 @@ struct TripCard: View {
                 .strokeBorder(Color.white.opacity(dark ? 0.1 : 0.2), style: StrokeStyle(lineWidth: 4, dash: [1.5, 2.5]))
         )
         .aspectRatio(0.72, contentMode: .fit)
-        .shadow(color: ink.glow.opacity(0.2), radius: 10, y: 6)
+        .shadow(color: .black.opacity(style == .metal ? 0.16 : 0.12), radius: 10, y: 6)
         .rotation3DEffect(.degrees(-tilt.height * 0.35), axis: (x: 1, y: 0, z: 0))
         .rotation3DEffect(.degrees(tilt.width * 0.35), axis: (x: 0, y: 1, z: 0))
         .accessibilityElement(children: .combine)
@@ -88,9 +88,12 @@ struct TripCard: View {
     private var backdrop: some View {
         ZStack {
             ink.ground
-            Splashes(trip: trip, ink: ink)
-            if style == .metal { metalwork }
-            MonogramField(initial: trip.initial, ink: ink)
+            if style == .passport { Splashes(trip: trip, ink: ink) }
+            if style == .metal {
+                metalwork
+            } else {
+                MonogramField(initial: trip.initial, ink: ink)
+            }
             if style == .passport {
                 grain.resizable(resizingMode: .tile)
                     .opacity(dark ? 0.11 : 0.15)
@@ -102,36 +105,12 @@ struct TripCard: View {
 
     // Brushed metal, two seams refracting across it, and a hard specular band the way light
     // runs off something polished.
+    // Light brushed metal: a pale surface raked twice, with the faintest pearl shift over it.
+    // B: a sheet of steel with a rolled-in finish. The texture is a single small noise tile,
+    // so it costs one draw however large the card gets, and the colour is light landing on it
+    // rather than paint laid over it.
     private var metalwork: some View {
-        ZStack {
-            Chrome(phase: seamPhase, dark: dark)
-                .opacity(dark ? 0.55 : 0.42)
-                .blendMode(.overlay)
-            // The brush itself: fine striations raked across the surface.
-            brushed.resizable(resizingMode: .tile)
-                .opacity(dark ? 0.35 : 0.3)
-                .blendMode(.overlay)
-                .rotationEffect(.degrees(28))
-                .scaleEffect(1.8)
-                .blur(radius: 0.4)
-            // A second, coarser rake at a different angle, which is what stops it looking printed.
-            brushed.resizable(resizingMode: .tile)
-                .opacity(0.18)
-                .blendMode(.softLight)
-                .rotationEffect(.degrees(24))
-                .scaleEffect(x: 3.4, y: 1.8)
-            PrismSeam(phase: seamPhase)
-            PrismSeam(phase: 1 - seamPhase)
-                .scaleEffect(y: -1)
-                .opacity(0.5)
-            LinearGradient(stops: [.init(color: .clear, location: 0.3),
-                                   .init(color: .white.opacity(dark ? 0.18 : 0.32), location: 0.47),
-                                   .init(color: .white.opacity(dark ? 0.03 : 0.08), location: 0.53),
-                                   .init(color: .clear, location: 0.7)],
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-                .offset(x: tilt.width * 4, y: tilt.height * 4)
-                .blendMode(.plusLighter)
-        }
+        BeadBlastSteel(tilt: tilt, warm: ink.glow, cool: ink.glow2)
     }
 
     private var chipRow: some View {
@@ -215,39 +194,60 @@ struct TripCard: View {
 struct NeonInk {
     let accent: Double
     let dark: Bool
+    // The metal print is pearl: near-white, whatever the system scheme is.
+    var pearl = false
 
     private func shifted(_ amount: Double) -> Double { (accent + amount + 1).truncatingRemainder(dividingBy: 1) }
 
     var ground: LinearGradient {
+        if pearl {
+            // BrushedSteel paints the surface; this is only what shows through it.
+            return LinearGradient(colors: [Color(white: 0.9), Color(white: 0.55)],
+                                  startPoint: .top, endPoint: .bottom)
+        }
         let stops: [Color] = dark
             ? [Color(hue: 0.70, saturation: 0.55, brightness: 0.36), Color(hue: 0.73, saturation: 0.7, brightness: 0.16)]
             : [Color(hue: 0.58, saturation: 0.1, brightness: 0.99), Color(hue: 0.73, saturation: 0.14, brightness: 0.92)]
         return LinearGradient(colors: stops, startPoint: .top, endPoint: .bottom)
     }
 
-    // Softened right down from the first pass. Neon that shouts does not age well.
-    var glow: Color { Color(hue: accent, saturation: dark ? 0.5 : 0.55, brightness: dark ? 0.86 : 0.6) }
-    var glow2: Color { Color(hue: shifted(0.05), saturation: dark ? 0.22 : 0.45, brightness: dark ? 0.95 : 0.55) }
-    var haze: Color { Color(hue: shifted(-0.02), saturation: dark ? 0.55 : 0.2, brightness: dark ? 0.44 : 0.92) }
-    var text: Color { dark ? .white : Color(hue: 0.73, saturation: 0.7, brightness: 0.3) }
-    // Brushed metal for the dot matrix: white through silver to steel, across the panel.
+    var glow: Color {
+        pearl ? Color(hue: shifted(0.04), saturation: 0.16, brightness: 0.88)
+              : Color(hue: accent, saturation: dark ? 0.5 : 0.55, brightness: dark ? 0.86 : 0.6)
+    }
+    var glow2: Color {
+        pearl ? Color(hue: shifted(0.3), saturation: 0.14, brightness: 0.92)
+              : Color(hue: shifted(0.05), saturation: dark ? 0.22 : 0.45, brightness: dark ? 0.95 : 0.55)
+    }
+    var haze: Color {
+        pearl ? Color(white: 0.88) : Color(hue: shifted(-0.02), saturation: dark ? 0.55 : 0.2, brightness: dark ? 0.44 : 0.92)
+    }
+    var text: Color {
+        pearl ? Color(white: 0.13) : (dark ? .white : Color(hue: 0.73, saturation: 0.7, brightness: 0.3))
+    }
+    // Brushed metal for the dot matrix.
     var metal: Gradient {
-        Gradient(colors: dark
+        if pearl { return Gradient(colors: [Color(white: 0.62), Color(white: 0.34), Color(white: 0.58), Color(white: 0.26)]) }
+        return Gradient(colors: dark
             ? [Color(white: 1), Color(white: 0.78), Color(white: 0.92), Color(white: 0.6)]
             : [Color(white: 0.98), Color(white: 0.62), Color(white: 0.85), Color(white: 0.45)])
     }
+    // The pearl shift, taken from Apple's Siri diagram: blush, lavender, aqua, sage, cream.
     var splash: Color {
-        dark ? Color(hue: 0.57, saturation: 0.3, brightness: 0.9) : Color(hue: 0.72, saturation: 0.5, brightness: 0.62)
+        pearl ? Color(hue: shifted(0.1), saturation: 0.22, brightness: 0.98)
+              : (dark ? Color(hue: 0.57, saturation: 0.3, brightness: 0.9) : Color(hue: 0.72, saturation: 0.5, brightness: 0.62))
     }
     var separation: Color {
-        dark ? Color(hue: 0.73, saturation: 0.8, brightness: 0.1) : Color(hue: 0.72, saturation: 0.2, brightness: 0.8)
+        pearl ? Color(white: 0.86) : (dark ? Color(hue: 0.73, saturation: 0.8, brightness: 0.1) : Color(hue: 0.72, saturation: 0.2, brightness: 0.8))
     }
-
-    // The rim runs from the accent into its deepened neighbour. Neighbours sit together.
     var rim: LinearGradient {
-        LinearGradient(colors: [Color(hue: accent, saturation: dark ? 0.42 : 0.5, brightness: dark ? 0.82 : 0.9),
-                                Color(hue: shifted(-0.09), saturation: dark ? 0.8 : 0.7, brightness: dark ? 0.46 : 0.68)],
-                       startPoint: .topLeading, endPoint: .bottomTrailing)
+        if pearl {
+            return LinearGradient(colors: [Color(white: 0.97), Color(white: 0.55)],
+                                  startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
+        return LinearGradient(colors: [Color(hue: accent, saturation: dark ? 0.42 : 0.5, brightness: dark ? 0.82 : 0.9),
+                                       Color(hue: shifted(-0.09), saturation: dark ? 0.8 : 0.7, brightness: dark ? 0.46 : 0.68)],
+                              startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }
 
@@ -390,14 +390,22 @@ private struct Splashes: View {
     let trip: Trip
     let ink: NeonInk
 
+    // Blush, lavender, aqua and sage, all barely there.
+    private static let pearlShift = [
+        Color(hue: 0.98, saturation: 0.18, brightness: 0.98),
+        Color(hue: 0.72, saturation: 0.16, brightness: 0.98),
+        Color(hue: 0.50, saturation: 0.18, brightness: 0.98),
+        Color(hue: 0.28, saturation: 0.16, brightness: 0.96),
+    ]
+
     var body: some View {
         GeometryReader { geometry in
             let size = geometry.size
             let reach = max(size.width, size.height)
             var random = SeededRandom(seed: trip.textureSeed)
             ZStack {
-                ForEach(0..<2, id: \.self) { index in
-                    let colour = index == 1 ? ink.glow : ink.splash
+                ForEach(0..<4, id: \.self) { index in
+                    let colour = ink.pearl ? Self.pearlShift[index] : (index == 1 ? ink.glow : ink.splash)
                     let centre = UnitPoint(x: random.unit(), y: random.unit())
                     let spread = reach * (0.35 + random.unit() * 0.55)
                     let weight = 0.12 + random.unit() * 0.24

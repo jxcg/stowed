@@ -154,13 +154,17 @@ where they conflict.
     the deck and the first card of the stack, the oldest is at the bottom. The deck draws the
     pack imperfectly, each card behind the top one offset and angled by an amount fixed to that
     trip, with its own shadow, and a pile shadow that deepens with the number of trips. Swiping
-    either way takes the top card off and reveals the next.
+    either way takes the top card off and reveals the next. A card thrown hard leaves faster and
+    further than one nudged, the way inertia scrolling carries a flick. Under the deck sits a
+    run of dots you can drag along to travel it; only a window of dots is drawn however many
+    trips there are.
 28. **One card, printed two ways.** The playing card is gone. What is left is a muted ground
     carrying splashes, the trip's mark punched out of metal dots, the place in SF Extended,
     stats under wide labels, the dates along the bottom, and a 4pt rim running into the
-    neighbouring hue. **Passport** prints it plain, with grain. **Metal** adds real brushed metal, two rakes of
-    striation at different angles over chrome, two prismatic seams, and a specular band that
-    follows the tilt. Switched from the trips
+    neighbouring hue. **Passport** prints it plain, with grain. **Metal** is a sheet of brushed steel: a tonal
+    sweep from a bright shoulder into shadow, raked twice with fine striation, a broad
+    highlight that follows the tilt, and only a whisper of colour. No tiled letter. The same
+    rake is laid over the passport print, so both share a surface. Switched from the trips
     menu.
 29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
     the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.
