@@ -98,7 +98,7 @@ struct ContentView: View {
 }
 
 // A playing card (decisions 20, 21): one deep colour from a curated palette, darker toward the
-// edges, grain heaviest in the middle, a lattice and a double rule, a foil frame, the initial
+// edges, grain heaviest in the middle, its own texture and a double rule, a foil frame, the initial
 // and suit in two corners, a monogram watermark, no emoji.
 private struct TripCard: View {
     let trip: Trip
@@ -223,6 +223,7 @@ private func tile(size: Int, pixel: (Int, Int) -> UInt8) -> Image {
 private struct TripForm: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \Trip.createdAt, order: .reverse) private var previous: [Trip]
     @State private var name = ""
     @State private var hasDates = false
     @State private var startDate = Date.now
@@ -234,6 +235,16 @@ private struct TripForm: View {
         NavigationStack {
             Form {
                 TextField("Trip name", text: $name)
+                // One tap for the usual places; the field stays editable.
+                ScrollView(.horizontal) {
+                    HStack {
+                        ForEach(TripPresets.suggestions(previous: previous.map(\.name)), id: \.self) { preset in
+                            Button(preset) { name = preset }.buttonStyle(.bordered)
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 0))
                 Toggle("Dates", isOn: $hasDates)
                 if hasDates {
                     DatePicker("Start", selection: $startDate, displayedComponents: .date)
