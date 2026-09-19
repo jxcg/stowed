@@ -168,7 +168,8 @@ where they conflict.
     a set. The ground carries the same two splash colours on every card, thrown across it
     differently each time and fixed to the trip, the place's own letter tiled small
     across the ground, and grain over the lot, so it never reads as flat. A 4pt rim running from the
-    accent into its deepened neighbour with a fine grain along it, a map pin punched out of a dot matrix on every card, a tick strip along the top, a row of packed emoji,
+    accent into its deepened neighbour with a fine grain along it, a map pin punched out of a dot matrix on every card, lit from behind and
+    glowing so it is the first thing you see, a tick strip along the top, a row of packed emoji,
     stats under wide labels, and the dates along the bottom. The place name is set in SF
     Extended. Nothing is borrowed from any particular app. One of the two styles goes once
     chosen.

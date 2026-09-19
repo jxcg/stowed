@@ -188,6 +188,8 @@ struct NeonInk {
     var haze: Color { Color(hue: shifted(-0.02), saturation: dark ? 0.85 : 0.3, brightness: dark ? 0.5 : 0.9) }
     // Everything written on the card.
     var text: Color { dark ? .white : Color(hue: 0.73, saturation: 0.85, brightness: 0.34) }
+    // The pin burns hotter than anything else on the card.
+    var pinLight: Color { Color(hue: accent, saturation: dark ? 0.55 : 0.8, brightness: 1) }
     // Colour borrowed from the other mode, thrown across the ground so it is never flat.
     var splash: Color {
         dark ? Color(hue: 0.57, saturation: 0.4, brightness: 1) : Color(hue: 0.72, saturation: 0.9, brightness: 0.5)
@@ -232,9 +234,19 @@ private struct DotMatrixMark: View {
 
     var body: some View {
         GeometryReader { geometry in
-            dots
-                .mask(shape(in: geometry.size))
-                .frame(width: geometry.size.width, height: geometry.size.height)
+            let reach = min(geometry.size.width, geometry.size.height)
+            ZStack {
+                // A pool of light for the pin to stand in, so it is the first thing you see.
+                RadialGradient(colors: [ink.glow.opacity(ink.dark ? 0.6 : 0.45),
+                                        ink.glow.opacity(ink.dark ? 0.22 : 0.16),
+                                        .clear],
+                               center: .center, startRadius: 0, endRadius: reach * 0.68)
+                dots
+                    .mask(shape(in: geometry.size))
+                    .shadow(color: ink.glow.opacity(0.9), radius: 9)
+                    .shadow(color: ink.glow.opacity(0.5), radius: 20)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 10)
@@ -249,9 +261,9 @@ private struct DotMatrixMark: View {
                 var x: CGFloat = 0
                 while x < size.width {
                     // Brighter toward the top, so the matrix reads as lit rather than printed.
-                    let lift = 1 - (y / size.height) * 0.45
-                    context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 2.8, height: 2.8)),
-                                 with: .color(ink.glow.opacity(lift)))
+                    let lift = 1 - (y / size.height) * 0.3
+                    context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 3.1, height: 3.1)),
+                                 with: .color(ink.pinLight.opacity(lift)))
                     x += spacing
                 }
                 y += spacing
