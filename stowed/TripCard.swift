@@ -569,6 +569,9 @@ private struct SteelFacets: View {
                         // Stretched the way a reflection is, not square like a sticker.
                         .frame(width: side * 1.9, height: side * 0.75)
                         .rotationEffect(.degrees(random.unit() * 90 - 45))
+                        // They open out as the card turns further, the way a reflection spreads
+                        // as the angle widens.
+                        .scaleEffect(0.7 + showing * 0.6)
                         .blur(radius: 5)
                         .position(x: random.unit() * size.width, y: random.unit() * size.height)
                         .opacity(0.55 + random.unit() * 0.45)
