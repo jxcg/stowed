@@ -9,8 +9,6 @@ enum CardTexture: String, CaseIterable {
 struct CardTextureView: View {
     let trip: Trip
 
-    private var initial: String { String(trip.name.prefix(1)).uppercased() }
-
     // Digits of the dates, or of the creation date when the trip has none.
     private var digits: [String] {
         let date = trip.startDate ?? trip.createdAt
@@ -39,7 +37,7 @@ struct CardTextureView: View {
 
     // Initial and date digits thrown across the face at random sizes and angles.
     private func drawScatter(_ context: inout GraphicsContext, _ size: CGSize, _ random: inout SeededRandom) {
-        let glyphs = [initial, initial] + digits
+        let glyphs = [trip.initial, trip.initial] + digits
         for _ in 0..<48 {
             let glyph = glyphs[Int(random.next() % UInt64(glyphs.count))]
             let point = CGPoint(x: random.unit() * size.width, y: random.unit() * size.height)
@@ -56,7 +54,7 @@ struct CardTextureView: View {
     // The initial on a diagonal grid, small and regular.
     private func drawLattice(_ context: inout GraphicsContext, _ size: CGSize) {
         let step: CGFloat = 40
-        let text = context.resolve(Text(initial).font(.system(size: 16, weight: .bold, design: .serif)))
+        let text = context.resolve(Text(trip.initial).font(.system(size: 16, weight: .bold, design: .serif)))
         var row = 0
         var y: CGFloat = 0
         while y < size.height + step {

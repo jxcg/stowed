@@ -155,6 +155,12 @@ where they conflict.
     pack imperfectly, each card behind the top one offset and angled by an amount fixed to that
     trip, with its own shadow, and a pile shadow that deepens with the number of trips. Swiping
     either way takes the top card off and reveals the next.
+28. **The card border carries a motif.** Whatever the trip has most of, alternating with its
+    suit, walked around the frame at a small size, drained of its own colour and blended into
+    the frame so it reads as pressed in rather than stuck on. A trip with nothing packed shows
+    its suit alone.
+29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
+    the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.
 
 On-device only. One user, local persistence, no account, no network.
 

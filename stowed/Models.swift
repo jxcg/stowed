@@ -29,6 +29,17 @@ final class Trip {
         self.texture = texture.rawValue
     }
 
+    // The letter on the card, in the corners and as the watermark.
+    var initial: String { String(name.prefix(1)).uppercased() }
+
+    // Whatever you packed most of. It becomes the motif around the card's border.
+    // Ties go to whatever was packed first.
+    var signatureEmoji: String? {
+        items.max { a, b in
+            a.quantity == b.quantity ? a.addedAt > b.addedAt : a.quantity < b.quantity
+        }?.emoji
+    }
+
     var cardPalette: CardPalette { CardPalette(rawValue: palette) ?? .oxblood }
     var cardSuit: CardSuit { CardSuit(rawValue: suit) ?? .spade }
     var cardTexture: CardTexture { CardTexture(rawValue: texture) ?? .scatter }
