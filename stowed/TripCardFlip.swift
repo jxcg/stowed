@@ -5,7 +5,7 @@ import SwiftUI
 struct TripCardFlip<Front: View>: View {
     let trip: Trip
     let onEdit: () -> Void
-    var tilt: CGSize = .zero
+    @Environment(\.cardTilt) private var tilt
     @ViewBuilder let front: () -> Front
     @State private var turned = false
 
@@ -14,21 +14,21 @@ struct TripCardFlip<Front: View>: View {
             front()
                 .opacity(turned ? 0 : 1)
                 .accessibilityHidden(turned)
-            PackedBack(trip: trip)
-                .opacity(turned ? 1 : 0)
-                .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
-                .accessibilityHidden(!turned)
+            if turned {
+                PackedBack(trip: trip)
+                    .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
+            }
         }
         .rotation3DEffect(.degrees(turned ? 180 : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.45)
         .animation(.snappy(duration: 0.45), value: turned)
-        .overlay(alignment: .topTrailing) {
+        .overlay(alignment: .bottomTrailing) {
             // They sit on the card, so they ride with it rather than floating above.
             buttons.offset(x: tilt.width * 0.5, y: tilt.height * 0.5)
         }
     }
 
     private var buttons: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             control(turned ? "arrow.uturn.backward" : "list.bullet",
                     label: turned ? "Back to the card" : "Quick view") { turned.toggle() }
             control("pencil", label: "Edit trip", action: onEdit)
@@ -39,12 +39,12 @@ struct TripCardFlip<Front: View>: View {
     private func control(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.secondary)
                 // Cut into the surface rather than printed on it: dark where the tool went in,
                 // a catch of light on the far lip.
                 .shadow(color: .white.opacity(0.7), radius: 0, y: 0.7)
-                .frame(width: 32, height: 32)
+                .frame(width: 38, height: 38)
                 .background { well }
         }
         .buttonStyle(.plain)
@@ -71,6 +71,7 @@ struct TripCardFlip<Front: View>: View {
                                                        startPoint: .top, endPoint: .bottom)))
             }
             .clipShape(Circle())
+            .drawingGroup()
     }
 }
 

@@ -108,13 +108,14 @@ struct ContentView: View {
 
     private func card(_ trip: Trip) -> some View {
         // Inset a little so a card never fills the screen edge to edge, and the pile behind shows.
-        TripCardFlip(trip: trip, onEdit: { openTrip = trip }, tilt: motion.tilt) {
+        TripCardFlip(trip: trip, onEdit: { openTrip = trip }) {
             Button { openTrip = trip } label: {
-                TripCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning, style: cardStyle)
+                TripCard(trip: trip, holographic: motion.isRunning, style: cardStyle)
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 22)
+        .environment(\.cardTilt, motion.tilt)
         .contextMenu {
             Button("Delete", systemImage: "trash", role: .destructive) { tripToDelete = trip }
         }

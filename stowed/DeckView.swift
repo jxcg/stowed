@@ -9,6 +9,7 @@ struct DeckView<Card: View>: View {
     @State private var drag: CGSize = .zero
     // How hard it is being thrown, which the top card reads to show its printing.
     @State private var reveal: Double = 0
+    @Environment(\.cardTilt) private var tilt
 
     private static var maxVisible: Int { 5 }
 
@@ -32,6 +33,8 @@ struct DeckView<Card: View>: View {
                         .offset(depth == 0 ? drag : .zero)
                         .rotationEffect(depth == 0 ? .degrees(Double(drag.width) / 20) : .zero)
                         .environment(\.cardReveal, depth == 0 ? reveal : 0)
+                        // Only the card on top answers the phone's movement.
+                        .environment(\.cardTilt, depth == 0 ? tilt : .zero)
                         .allowsHitTesting(depth == 0)
                 }
             }

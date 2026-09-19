@@ -5,13 +5,13 @@ import SwiftUI
 // Extended, and the dates along the bottom. Same data, no new model fields.
 struct TripCard: View {
     let trip: Trip
-    var tilt: CGSize = .zero
     var holographic = false
     // Passport is the plain printed card; metal adds chrome, seams and a specular band.
     var style: CardStyle = .metal
     @Environment(\.colorScheme) private var scheme
     // Raised while the card is being thrown, so the printing glimpses through.
     @Environment(\.cardReveal) private var reveal
+    @Environment(\.cardTilt) private var tilt
     // ponytail: three shapes up for comparison. Two get deleted once one is chosen.
     @AppStorage("dividerShape") private var dividerShape = DividerShape.crease
 
@@ -432,20 +432,30 @@ private struct Splashes: View {
     let trip: Trip
     let ink: NeonInk
 
+    // Worked out once from the trip's seed rather than on every redraw: a splash never moves.
+    private struct Placement {
+        let centre: UnitPoint
+        let spread: CGFloat
+        let weight: Double
+    }
+
+    private var placements: [Placement] {
+        var random = SeededRandom(seed: trip.textureSeed)
+        return (0..<2).map { _ in
+            Placement(centre: UnitPoint(x: random.unit(), y: random.unit()),
+                      spread: 0.35 + random.unit() * 0.55,
+                      weight: 0.12 + random.unit() * 0.24)
+        }
+    }
 
     var body: some View {
         GeometryReader { geometry in
-            let size = geometry.size
-            let reach = max(size.width, size.height)
-            var random = SeededRandom(seed: trip.textureSeed)
+            let reach = max(geometry.size.width, geometry.size.height)
             ZStack {
-                ForEach(0..<4, id: \.self) { index in
+                ForEach(Array(placements.enumerated()), id: \.offset) { index, spot in
                     let colour = ink.pearl ? ink.finish.wash[index] : (index == 1 ? ink.glow : ink.splash)
-                    let centre = UnitPoint(x: random.unit(), y: random.unit())
-                    let spread = reach * (0.35 + random.unit() * 0.55)
-                    let weight = 0.12 + random.unit() * 0.24
-                    RadialGradient(colors: [colour.opacity(weight), .clear],
-                                   center: centre, startRadius: 0, endRadius: spread)
+                    RadialGradient(colors: [colour.opacity(spot.weight), .clear],
+                                   center: spot.centre, startRadius: 0, endRadius: reach * spot.spread)
                 }
             }
         }
