@@ -142,6 +142,9 @@ where they conflict.
     changes: a scatter of the initial and date digits, the initial tiled on a diagonal
     lattice, and a passport-stamp ring of name, dates and STOWED around the inner border. All
     sit under the grain and the holographic band.
+25. **New-trip presets.** Chips above the name field: your previous trip names first, then a
+    short curated list of cities, deduplicated and capped at eight. Tapping one fills the name
+    only; typing still works. No network, no place search.
 
 On-device only. One user, local persistence, no account, no network.
 
