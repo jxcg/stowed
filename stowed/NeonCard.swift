@@ -26,6 +26,12 @@ struct NeonCard: View {
         return start.formatted(.dateTime.day().month(.abbreviated).year()).uppercased()
     }
 
+    // How hard the light is hitting it. Nothing at rest, full at a good tilt.
+    private var ultraviolet: Double {
+        guard holographic else { return 0 }
+        return min(1, hypot(tilt.width, tilt.height) / 9)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             TickStrip(ink: ink)
@@ -37,8 +43,32 @@ struct NeonCard: View {
             footer
         }
         .background(ink.ground)
+        // Tilt it under the light and the security printing answers, the way a banknote does,
+        // with a slick of spectrum across it like the holographic patch on the same note.
+        .overlay(UltravioletLayer(trip: trip, ink: ink, strength: ultraviolet))
+        .overlay {
+            if holographic {
+                LinearGradient(colors: [.red, .yellow, .green, .cyan, .blue, .purple],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .mask(
+                        LinearGradient(stops: [.init(color: .clear, location: 0.28),
+                                               .init(color: .white, location: 0.5),
+                                               .init(color: .clear, location: 0.72)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                        .offset(x: tilt.width * 9, y: tilt.height * 9)
+                    )
+                    .opacity(0.28)
+                    .blendMode(.plusLighter)
+                    .allowsHitTesting(false)
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: 22))
         .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(ink.rim, lineWidth: 4))
+        // A fine grain along the rim. Close enough to read as texture rather than a pattern.
+        .overlay(
+            RoundedRectangle(cornerRadius: 22)
+                .strokeBorder(.white.opacity(0.16), style: StrokeStyle(lineWidth: 4, dash: [1.5, 2.5]))
+        )
         .aspectRatio(0.72, contentMode: .fit)
         .shadow(color: ink.glow.opacity(0.5), radius: 16, y: 8)
         .rotation3DEffect(.degrees(-tilt.height * 0.35), axis: (x: 1, y: 0, z: 0))
@@ -112,7 +142,9 @@ struct NeonCard: View {
     }
 }
 
-// Ten colourways, one per palette, every one built from the same three parts.
+// Ten colourways, one per palette, every one built from the same parts. Everything on a card
+// stays within its own hue: the second ink is a pale tint of the first, never its opposite, so
+// a purple card never picks up a green.
 struct NeonInk {
     let hue: Double
 
@@ -120,14 +152,18 @@ struct NeonInk {
 
     var ground: LinearGradient {
         LinearGradient(colors: [Color(hue: hue, saturation: 0.9, brightness: 0.44),
-                                Color(hue: shifted(0.05), saturation: 1, brightness: 0.18)],
+                                Color(hue: shifted(0.04), saturation: 1, brightness: 0.18)],
                        startPoint: .top, endPoint: .bottom)
     }
     var glow: Color { Color(hue: hue, saturation: 0.8, brightness: 1) }
-    var glow2: Color { Color(hue: shifted(0.45), saturation: 0.75, brightness: 1) }
+    // The pale ink. Same colour, most of the saturation taken out.
+    var glow2: Color { Color(hue: shifted(0.03), saturation: 0.32, brightness: 1) }
     var haze: Color { Color(hue: hue, saturation: 0.85, brightness: 0.5) }
+    // The rim travels from a light tone to a deep one of the same colour. No second hue.
     var rim: LinearGradient {
-        LinearGradient(colors: [glow, glow2], startPoint: .topLeading, endPoint: .bottomTrailing)
+        LinearGradient(colors: [Color(hue: hue, saturation: 0.45, brightness: 1),
+                                Color(hue: hue, saturation: 0.95, brightness: 0.6)],
+                       startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }
 
@@ -204,5 +240,55 @@ private struct DotMatrixMark: View {
                 .font(.system(size: size.height * 1.05, weight: .heavy).width(.expanded))
                 .frame(width: size.width, height: size.height)
         }
+    }
+}
+
+// What the card hides until light of the right kind falls on it: fibres through the stock, a
+// thread down one side, and the trip's own letter watermarked across the middle. Only drawn
+// while the motion effect is on and the phone is actually tilted.
+private struct UltravioletLayer: View {
+    let trip: Trip
+    let ink: NeonInk
+    let strength: Double
+
+    private var fluorescence: Color { ink.glow2 }
+
+    var body: some View {
+        Canvas { context, size in
+            var random = SeededRandom(seed: trip.textureSeed)
+
+            // Fibres, scattered through the stock at every angle.
+            for _ in 0..<70 {
+                let origin = CGPoint(x: random.unit() * size.width, y: random.unit() * size.height)
+                let angle = random.unit() * 2 * .pi
+                let length = 6 + random.unit() * 12
+                var fibre = Path()
+                fibre.move(to: origin)
+                fibre.addLine(to: CGPoint(x: origin.x + cos(angle) * length, y: origin.y + sin(angle) * length))
+                let tint = random.unit() > 0.5 ? Color.white : fluorescence
+                context.stroke(fibre, with: .color(tint.opacity(0.55 + random.unit() * 0.45)), lineWidth: 1.1)
+            }
+
+            // The thread, dashed, running the height of the card.
+            let threadX = size.width * 0.82
+            var thread = Path()
+            thread.move(to: CGPoint(x: threadX, y: 0))
+            thread.addLine(to: CGPoint(x: threadX, y: size.height))
+            context.stroke(thread, with: .color(fluorescence.opacity(0.7)),
+                           style: StrokeStyle(lineWidth: 3, dash: [9, 5]))
+
+            // The watermark, only readable under the light.
+            let mark = context.resolve(
+                Text(trip.initial)
+                    .font(.system(size: size.height * 0.34, weight: .black).width(.expanded))
+                    .foregroundStyle(fluorescence.opacity(0.5))
+            )
+            context.draw(mark, at: CGPoint(x: size.width / 2, y: size.height * 0.46), anchor: .center)
+        }
+        .blendMode(.plusLighter)
+        .opacity(strength)
+        .animation(.easeOut(duration: 0.15), value: strength)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
