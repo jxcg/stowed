@@ -16,12 +16,19 @@ enum TripsView: String, CaseIterable {
     }
 }
 
+// ponytail: two card styles up for comparison (#66). One goes once the owner picks.
+enum CardStyle: String, CaseIterable {
+    case playing, passport
+    var title: String { self == .playing ? "Playing card" : "Passport" }
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
     @AppStorage("tripsView") private var view = TripsView.stack
     // Off by default (decision 23). Nothing in the simulator; needs a real phone.
     @AppStorage("motionEffect") private var motionEffect = false
+    @AppStorage("cardStyle") private var cardStyle = CardStyle.playing
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var motion = MotionReader()
     @State private var isAdding = false
@@ -56,6 +63,9 @@ struct ContentView: View {
                 Menu("More", systemImage: "ellipsis") {
                     Picker("View", selection: $view) {
                         ForEach(TripsView.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                    Picker("Card", selection: $cardStyle) {
+                        ForEach(CardStyle.allCases, id: \.self) { Text($0.title).tag($0) }
                     }
                     Toggle("Motion effect", isOn: $motionEffect)
                 }
@@ -99,8 +109,13 @@ struct ContentView: View {
     private func card(_ trip: Trip) -> some View {
         // Inset a little so a card never fills the screen edge to edge, and the pile behind shows.
         NavigationLink(value: trip) {
-            TripCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning)
-                .padding(.horizontal, 22)
+            Group {
+                switch cardStyle {
+                case .playing: TripCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning)
+                case .passport: PassportCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning)
+                }
+            }
+            .padding(.horizontal, 22)
         }
             .buttonStyle(.plain)
             .contextMenu {

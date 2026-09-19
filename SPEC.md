@@ -162,6 +162,11 @@ where they conflict.
     the motion effect on the card turns on both axes with the phone. No pattern on the border.
 29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
     the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.
+30. **A second card style is under comparison: the passport.** A neon page rather than a
+    playing card: deep ground, two fluorescent inks taken from the trip's hue, a repeating
+    plane strip along the top, a halftone globe with the trip's flight arcs, a row of packed
+    emoji standing in for flags, big stats under grotesk labels, and a machine-readable strip
+    along the bottom. Same data, no new fields. One of the two styles goes once chosen.
 
 On-device only. One user, local persistence, no account, no network.
 
