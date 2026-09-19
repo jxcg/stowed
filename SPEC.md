@@ -163,8 +163,8 @@ where they conflict.
 29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
     the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.
 30. **A second card style is under comparison: neon.** A lit sign rather than a playing card:
-    deep ground, a 4pt rim running from a light tone to a deep one of the same colour with a
-    fine grain along it, the trip's own letter or a map pin punched out of a dot matrix, a tick
+    deep ground, a 4pt rim running from a light tone of the card's colour into its
+    deepened neighbour, with a fine grain along it, the trip's own letter or a map pin punched out of a dot matrix, a tick
     strip along the top, a row of packed emoji, stats under wide labels, and the dates along the
     bottom. The place name is set in SF Extended. Everything on a card stays within its own hue;
     the second ink is a pale tint of the first, never its opposite, so a purple card never picks

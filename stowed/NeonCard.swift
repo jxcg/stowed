@@ -148,7 +148,7 @@ struct NeonCard: View {
 struct NeonInk {
     let hue: Double
 
-    private func shifted(_ amount: Double) -> Double { (hue + amount).truncatingRemainder(dividingBy: 1) }
+    private func shifted(_ amount: Double) -> Double { (hue + amount + 1).truncatingRemainder(dividingBy: 1) }
 
     var ground: LinearGradient {
         LinearGradient(colors: [Color(hue: hue, saturation: 0.9, brightness: 0.44),
@@ -159,10 +159,11 @@ struct NeonInk {
     // The pale ink. Same colour, most of the saturation taken out.
     var glow2: Color { Color(hue: shifted(0.03), saturation: 0.32, brightness: 1) }
     var haze: Color { Color(hue: hue, saturation: 0.85, brightness: 0.5) }
-    // The rim travels from a light tone to a deep one of the same colour. No second hue.
+    // The rim runs from a light tone of the card's own colour into its neighbour, deepened:
+    // magenta into purple, purple into dark blue. Neighbours sit together; opposites fight.
     var rim: LinearGradient {
-        LinearGradient(colors: [Color(hue: hue, saturation: 0.45, brightness: 1),
-                                Color(hue: hue, saturation: 0.95, brightness: 0.6)],
+        LinearGradient(colors: [Color(hue: hue, saturation: 0.5, brightness: 1),
+                                Color(hue: shifted(-0.09), saturation: 0.95, brightness: 0.52)],
                        startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }
