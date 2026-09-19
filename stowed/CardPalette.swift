@@ -42,8 +42,8 @@ enum CardPalette: String, CaseIterable {
 
     var frameGradient: LinearGradient {
         let colors: [Color] = switch frame {
-        case .tone: [Color(hue: hue, saturation: saturation * 0.4, brightness: 0.97), Color(hue: hue, saturation: saturation * 0.65, brightness: 0.8)]
-        case .gold: [Color(hue: 0.12, saturation: 0.55, brightness: 0.95), Color(hue: 0.10, saturation: 0.7, brightness: 0.7)]
+        case .tone: [Color(hue: hue, saturation: saturation * 0.25, brightness: 0.99), Color(hue: hue, saturation: saturation * 0.85, brightness: 0.62)]
+        case .gold: [Color(hue: 0.13, saturation: 0.35, brightness: 0.99), Color(hue: 0.09, saturation: 0.85, brightness: 0.58)]
         }
         return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
     }

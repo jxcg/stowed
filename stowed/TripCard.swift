@@ -20,8 +20,7 @@ struct TripCard: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 28).fill(palette.frameGradient)
-            CardBorderMotif(trip: trip)
-            art.clipShape(RoundedRectangle(cornerRadius: 18)).padding(12)
+            art.clipShape(RoundedRectangle(cornerRadius: 18)).padding(13)
             // Double hairline rule just inside the frame.
             RoundedRectangle(cornerRadius: 15).strokeBorder(.white.opacity(0.22), lineWidth: 1).padding(17)
 
@@ -119,62 +118,4 @@ private func tile(size: Int, pixel: (Int, Int) -> UInt8) -> Image {
         provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent
     )!
     return Image(decorative: cgImage, scale: 1)
-}
-
-
-// The border pattern: a run of small abstract marks in the slim band around the frame. Which
-// mark you get follows the trip's suit, so every card's edge belongs to it. Drawn in the
-// frame's own light rather than a colour of its own.
-private struct CardBorderMotif: View {
-    let trip: Trip
-
-    // Local coordinates: centred on the origin, running along +x with the edge.
-    private var mark: (step: CGFloat, path: Path, filled: Bool) {
-        switch trip.cardSuit {
-        case .spade:                                  // chevrons
-            (9, Path { $0.move(to: CGPoint(x: -2, y: -2.4)); $0.addLine(to: CGPoint(x: 1.2, y: 0)); $0.addLine(to: CGPoint(x: -2, y: 2.4)) }, false)
-        case .heart:                                  // beads
-            (8, Path(ellipseIn: CGRect(x: -1.7, y: -1.7, width: 3.4, height: 3.4)), true)
-        case .diamond:                                // lozenges
-            (10, Path { $0.move(to: CGPoint(x: -2.6, y: 0)); $0.addLine(to: CGPoint(x: 0, y: -2.4)); $0.addLine(to: CGPoint(x: 2.6, y: 0)); $0.addLine(to: CGPoint(x: 0, y: 2.4)); $0.closeSubpath() }, true)
-        case .club:                                   // ticks
-            (7, Path { $0.move(to: CGPoint(x: 0, y: -2.6)); $0.addLine(to: CGPoint(x: 0, y: 2.6)) }, false)
-        }
-    }
-
-    var body: some View {
-        Canvas { context, size in
-            let (step, path, filled) = mark
-            let ink = GraphicsContext.Shading.color(.white)
-            for (point, angle) in perimeter(size: size, band: 6, step: step) {
-                var layer = context
-                layer.translateBy(x: point.x, y: point.y)
-                layer.rotate(by: angle)
-                if filled {
-                    layer.fill(path, with: ink)
-                } else {
-                    layer.stroke(path, with: ink, lineWidth: 1.3)
-                }
-            }
-        }
-        .opacity(0.45)
-        .blendMode(.overlay)
-        .accessibilityHidden(true)
-    }
-
-    // Points clockwise from the top-left, each with the direction of the edge it sits on.
-    private func perimeter(size: CGSize, band: CGFloat, step: CGFloat) -> [(CGPoint, Angle)] {
-        let left = band, right = size.width - band
-        let top = band, bottom = size.height - band
-        var marks: [(CGPoint, Angle)] = []
-        var x = left
-        while x <= right { marks.append((CGPoint(x: x, y: top), .zero)); x += step }
-        var y = top + step
-        while y <= bottom { marks.append((CGPoint(x: right, y: y), .degrees(90))); y += step }
-        x = right - step
-        while x >= left { marks.append((CGPoint(x: x, y: bottom), .degrees(180))); x -= step }
-        y = bottom - step
-        while y > top { marks.append((CGPoint(x: left, y: y), .degrees(270))); y -= step }
-        return marks
-    }
 }

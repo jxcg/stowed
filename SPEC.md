@@ -155,9 +155,9 @@ where they conflict.
     pack imperfectly, each card behind the top one offset and angled by an amount fixed to that
     trip, with its own shadow, and a pile shadow that deepens with the number of trips. Swiping
     either way takes the top card off and reveals the next.
-28. **The card border carries a pattern.** A slim band of small abstract marks around the
-    frame, the mark following the trip's suit: chevrons, beads, lozenges or ticks. Drawn in
-    the frame's own light rather than a colour of its own. No emoji on the border.
+28. **The card border is a plain gradient band.** Slim, and running from a light tone to a
+    deep one so it reads as a gradient rather than a flat edge. No pattern and no emoji on it;
+    the face carries the detail.
 29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
     the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.
 
