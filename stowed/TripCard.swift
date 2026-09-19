@@ -1,8 +1,8 @@
 import SwiftUI
 
 // A playing card (decisions 20, 21): one deep colour from a curated palette, darker toward the
-// edges, grain heaviest in the middle, its own texture, a bevelled window in a hard-edged foil frame,
-// the initial and suit in two corners, a monogram pressed into the stock.
+// edges, a chrome face with one prismatic seam inside a hard-edged foil frame, the trip's mark punched
+// out of metal, the initial and suit in two corners.
 struct TripCard: View {
     let trip: Trip
     var tilt: CGSize = .zero
@@ -42,12 +42,14 @@ struct TripCard: View {
 
             RoundedRectangle(cornerRadius: 15).strokeBorder(.white.opacity(0.22), lineWidth: 1).padding(15)
 
-            // Monogram, pressed into the card rather than printed on it.
-            ZStack {
-                monogram.foregroundStyle(.black.opacity(0.13)).offset(y: 2)
-                monogram.foregroundStyle(.white.opacity(0.1)).offset(y: -1.5)
-            }
-            .accessibilityHidden(true)
+            // The trip's mark, punched out of metal, as on the other card.
+            DotMatrix(symbol: TripSymbol.forTrip(trip),
+                      metal: Gradient(colors: [Color(white: 1), Color(white: 0.7), Color(white: 0.92), Color(white: 0.5)]),
+                      spacing: 7, dot: 3.4)
+                .padding(.horizontal, 74)
+                .padding(.vertical, 96)
+                .opacity(0.9)
+                .shadow(color: .black.opacity(0.4), radius: 6)
 
             VStack(spacing: 8) {
                 Text(trip.name)
@@ -91,39 +93,38 @@ struct TripCard: View {
         .accessibilityElement(children: .combine)
     }
 
-    private var monogram: some View {
-        Text(trip.initial).font(.system(size: 220, weight: .bold, design: .serif))
-    }
-
-    // Single hue radial, the trip's texture, a sheen that follows the tilt, a faint shimmer,
-    // then grain masked so it is heaviest in the middle.
+    // Chrome with one prismatic seam, the same treatment as the card back, under the trip's
+    // texture and grain. The colour now lives in the frame and the seam, not the face.
     private var art: some View {
         ZStack {
-            RadialGradient(colors: [palette.centre, palette.edge], center: .center, startRadius: 0, endRadius: 440)
-            CardTextureView(trip: trip)
-            RadialGradient(colors: [.white.opacity(0.16), .clear], center: .topLeading, startRadius: 0, endRadius: 360)
+            Chrome(phase: seamPhase, dark: true)
+            PrismSeam(phase: seamPhase)
+            CardTextureView(trip: trip).opacity(0.3)
+            RadialGradient(colors: [.white.opacity(0.14), .clear], center: .topLeading, startRadius: 0, endRadius: 360)
                 .offset(tilt)
-            LinearGradient(
-                stops: [.init(color: .clear, location: 0.35), .init(color: .white.opacity(0.1), location: 0.5), .init(color: .clear, location: 0.65)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-            .offset(x: tilt.width * 3, y: tilt.height * 3)
-            // Holographic band: a spectrum sweep that rides the tilt, only with the motion effect.
             if holographic {
-                LinearGradient(colors: [.red, .yellow, .green, .cyan, .blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+                LinearGradient(colors: [.red, .yellow, .green, .cyan, .blue, .purple],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
                     .mask(
-                        LinearGradient(stops: [.init(color: .clear, location: 0.3), .init(color: .white, location: 0.5), .init(color: .clear, location: 0.7)],
+                        LinearGradient(stops: [.init(color: .clear, location: 0.35),
+                                               .init(color: .white, location: 0.5),
+                                               .init(color: .clear, location: 0.65)],
                                        startPoint: .topLeading, endPoint: .bottomTrailing)
                         .offset(x: tilt.width * 8, y: tilt.height * 8)
                     )
-                    .opacity(0.35)
-                    .blendMode(.overlay)
+                    .opacity(0.3)
+                    .blendMode(.plusLighter)
             }
             grain.resizable(resizingMode: .tile)
-                .opacity(0.3)
+                .opacity(0.22)
                 .blendMode(.overlay)
                 .mask(RadialGradient(colors: [.white, .white.opacity(0.1)], center: .center, startRadius: 30, endRadius: 380))
         }
+    }
+
+    // Fixed to the trip, so the seam lies the same way every launch.
+    private var seamPhase: Double {
+        Double(trip.textureSeed % 100) / 100
     }
 
     private var cornerMark: some View {

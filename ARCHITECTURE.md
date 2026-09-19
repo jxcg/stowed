@@ -57,6 +57,9 @@ One of them gets deleted once the choice is made.
 | File | Job |
 |---|---|
 | `TripCard.swift` | Draws one trip as a playing card, and holds the film grain tile. |
+| `Chrome.swift` | The brushed metal and the prismatic seam, shared by the playing card and the card back. |
+| `DotMatrix.swift` | A symbol punched out of metal dots, and which symbol a trip gets. Used by both card styles. |
+| `TripCardFlip.swift` | The quick view and edit buttons, and the card's back. |
 | `CardPalette.swift` | The ten colours and four suits a card can be, and how its frame is tinted. |
 | `CardTexture.swift` | The three textures, drawn with `Canvas` from the trip's own letters and dates. Also holds `SeededRandom`. |
 | `MotionReader.swift` | The phone's tilt, when the motion effect is switched on. Nothing in the simulator. |
