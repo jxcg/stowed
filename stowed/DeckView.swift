@@ -7,6 +7,8 @@ struct DeckView<Card: View>: View {
     @ViewBuilder let card: (Trip) -> Card
     @State private var topIndex = 0
     @State private var drag: CGSize = .zero
+    // How hard it is being thrown, which the top card reads to show its printing.
+    @State private var reveal: Double = 0
 
     private static var maxVisible: Int { 5 }
 
@@ -29,6 +31,7 @@ struct DeckView<Card: View>: View {
                         .offset(x: lie.x, y: lie.y)
                         .offset(depth == 0 ? drag : .zero)
                         .rotationEffect(depth == 0 ? .degrees(Double(drag.width) / 20) : .zero)
+                        .environment(\.cardReveal, depth == 0 ? reveal : 0)
                         .allowsHitTesting(depth == 0)
                 }
             }
@@ -36,7 +39,13 @@ struct DeckView<Card: View>: View {
             .shadow(color: .black.opacity(0.06 * Double(min(trips.count, Self.maxVisible))), radius: 18, y: 12)
             .highPriorityGesture(
                 DragGesture(minimumDistance: 24)
-                    .onChanged { drag = $0.translation }
+                    .onChanged { value in
+                        drag = value.translation
+                        // Under the hand it glimpses; it takes a real throw to light it up.
+                        let effortSoFar = hypot(value.predictedEndTranslation.width - value.translation.width,
+                                                value.predictedEndTranslation.height - value.translation.height)
+                        reveal = min(0.85, effortSoFar / 420 + abs(value.translation.width) / 900)
+                    }
                     .onEnded { value in
                         // How hard it was thrown, not just how far. A flick and a shove should
                         // not leave at the same speed.
@@ -45,6 +54,7 @@ struct DeckView<Card: View>: View {
                         let committed = abs(value.translation.width) > 100 || throwSpeed > 180
                         guard committed, trips.count > 1 else {
                             withAnimation(.bouncy) { drag = .zero }
+                            withAnimation(.easeOut(duration: 0.4)) { reveal = 0 }
                             return
                         }
                         // Carry the throw through: a harder swipe flies further and settles sooner.
@@ -55,10 +65,13 @@ struct DeckView<Card: View>: View {
                         withAnimation(.interpolatingSpring(stiffness: 120 + effort * 130, damping: 18)) {
                             drag = CGSize(width: exit, height: value.predictedEndTranslation.height * 0.6)
                         }
+                        // Flash of everything on the way out, then gone.
+                        withAnimation(.easeOut(duration: 0.12)) { reveal = min(1, 0.4 + effort * 0.6) }
                         withAnimation(.snappy(duration: 0.34 - Double(effort) * 0.12).delay(0.08)) {
                             topIndex += 1
                             drag = .zero
                         }
+                        withAnimation(.easeOut(duration: 0.45).delay(0.1)) { reveal = 0 }
                     }
             )
             .padding(.top, 40)

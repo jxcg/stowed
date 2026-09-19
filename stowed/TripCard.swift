@@ -10,6 +10,8 @@ struct TripCard: View {
     // Passport is the plain printed card; metal adds chrome, seams and a specular band.
     var style: CardStyle = .metal
     @Environment(\.colorScheme) private var scheme
+    // Raised while the card is being thrown, so the printing glimpses through.
+    @Environment(\.cardReveal) private var reveal
 
     private var ink: NeonInk { NeonInk(accent: trip.cardPalette.neonAccent, dark: scheme == .dark, pearl: style == .metal) }
 
@@ -35,8 +37,8 @@ struct TripCard: View {
 
     // How hard the light is hitting it. Nothing at rest, full at a good tilt.
     private var ultraviolet: Double {
-        guard holographic else { return 0 }
-        return min(1, hypot(tilt.width, tilt.height) / 9)
+        let fromTilt = holographic ? min(1, hypot(tilt.width, tilt.height) / 9) : 0
+        return max(fromTilt, reveal)
     }
 
     var body: some View {
@@ -256,7 +258,8 @@ private struct TickStrip: View {
     let ink: NeonInk
     var ultraviolet: Double = 0
 
-    // Neutral in the hand. Under the light it answers, the way the thread in a banknote does.
+    // Nothing to see in the hand. Turn the phone and the security printing answers, the way a
+    // banknote's does under a lamp.
     private var lit: Color { Color(hue: 0.74, saturation: 0.55, brightness: 1) }
 
     var body: some View {
@@ -267,23 +270,20 @@ private struct TickStrip: View {
                 while x < size.width {
                     let tall = index.isMultiple(of: 4)
                     let height: CGFloat = tall ? 10 : 5
-                    let plain = ink.text.opacity(tall ? 0.34 : 0.2)
-                    let colour = ultraviolet > 0
-                        ? plain.mix(with: tall ? lit : ink.glow2, by: ultraviolet)
-                        : plain
                     context.fill(Path(CGRect(x: x, y: (size.height - height) / 2, width: 2, height: height)),
-                                 with: .color(colour))
+                                 with: .color(tall ? lit : ink.glow2))
                     x += 7
                     index += 1
                 }
             }
-            // The mark that only the light brings up. The same one on every card.
+            // The marker that only the light brings up. The same one on every card.
             Image(systemName: "sparkles")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(lit)
-                .opacity(ultraviolet)
-                .shadow(color: lit.opacity(ultraviolet * 0.8), radius: 5)
+                .shadow(color: lit.opacity(0.8), radius: 5)
         }
+        // A trace of it at rest, so the strip is not a blank band, then it comes up with the tilt.
+        .opacity(0.05 + ultraviolet * 0.95)
         .frame(height: 16)
         .padding(.horizontal, 12)
         .padding(.top, 8)

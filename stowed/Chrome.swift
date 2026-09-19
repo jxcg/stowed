@@ -181,3 +181,16 @@ struct BeadBlastSteel: View {
         .accessibilityHidden(true)
     }
 }
+
+// How much of the card's security printing is showing. The deck raises it as a card is thrown,
+// so a hard swipe flashes what a tilt would otherwise have to reveal.
+private struct CardRevealKey: EnvironmentKey {
+    static let defaultValue: Double = 0
+}
+
+extension EnvironmentValues {
+    var cardReveal: Double {
+        get { self[CardRevealKey.self] }
+        set { self[CardRevealKey.self] = newValue }
+    }
+}

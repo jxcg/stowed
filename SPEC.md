@@ -172,7 +172,9 @@ where they conflict.
     night. The colours are muted rather than fluorescent, so they age. Three accents only:
     cyan, violet, magenta. The ground carries the same two splash colours on every card, thrown
     across it differently each time and fixed to the trip, and the place's letter tiled small.
-31. **Under the light, the neon card fluoresces and catches a rainbow.** With the motion effect on, tilting the
+31. **The card is plain until it is moved.** Its security printing stays hidden at rest; a tilt
+    brings it up, and so does a throw, in proportion to how hard the card was swiped.
+    **Under the light, the card fluoresces and catches a rainbow.** With the motion effect on, tilting the
     phone brings up security printing the way ultraviolet does on a banknote: fibres through
     the stock, a dashed thread down one side, and the trip's letter watermarked across the
     middle, plus a slick of spectrum sweeping across like a holographic patch. It all fades
