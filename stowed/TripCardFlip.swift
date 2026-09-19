@@ -5,6 +5,7 @@ import SwiftUI
 struct TripCardFlip<Front: View>: View {
     let trip: Trip
     let onEdit: () -> Void
+    var tilt: CGSize = .zero
     @ViewBuilder let front: () -> Front
     @State private var turned = false
 
@@ -20,7 +21,10 @@ struct TripCardFlip<Front: View>: View {
         }
         .rotation3DEffect(.degrees(turned ? 180 : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.45)
         .animation(.snappy(duration: 0.45), value: turned)
-        .overlay(alignment: .topTrailing) { buttons }
+        .overlay(alignment: .topTrailing) {
+            // They sit on the card, so they ride with it rather than floating above.
+            buttons.offset(x: tilt.width * 0.5, y: tilt.height * 0.5)
+        }
     }
 
     private var buttons: some View {

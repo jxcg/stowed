@@ -59,7 +59,11 @@ struct TripCard: View {
         .background(backdrop)
         // Tilt it under the light and the security printing answers, the way a banknote does,
         // with a slick of spectrum across it like the holographic patch on the same note.
-        .overlay(UltravioletLayer(trip: trip, ink: ink, strength: ultraviolet * (ink.pearl ? 0.22 : 1)))
+        .overlay {
+            if ultraviolet > 0.01 {
+                UltravioletLayer(trip: trip, ink: ink, strength: ultraviolet * (ink.pearl ? 0.22 : 1))
+            }
+        }
         .overlay {
             if holographic {
                 LinearGradient(colors: [.red, .yellow, .green, .cyan, .blue, .purple],
@@ -85,8 +89,6 @@ struct TripCard: View {
         )
         .aspectRatio(0.72, contentMode: .fit)
         .shadow(color: .black.opacity(style == .metal ? 0.16 : 0.12), radius: 10, y: 6)
-        .rotation3DEffect(.degrees(-tilt.height * 0.35), axis: (x: 1, y: 0, z: 0))
-        .rotation3DEffect(.degrees(tilt.width * 0.35), axis: (x: 0, y: 1, z: 0))
         .accessibilityElement(children: .combine)
     }
 
@@ -209,7 +211,7 @@ struct NeonInk {
 
     var ground: LinearGradient {
         if pearl {
-            // BrushedSteel paints the surface; this is only what shows through it.
+            // BeadBlastSteel paints the surface; this is only what shows through it.
             return LinearGradient(colors: [Color(white: 0.9), Color(white: 0.55)],
                                   startPoint: .top, endPoint: .bottom)
         }

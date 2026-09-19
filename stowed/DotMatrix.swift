@@ -5,7 +5,7 @@ import SwiftUI
 struct DotMatrix: View {
     let symbol: String
     let metal: Gradient
-    var spacing: CGFloat = 6
+    var spacing: CGFloat = 7
     var dot: CGFloat = 3.1
 
     var body: some View {
@@ -19,6 +19,9 @@ struct DotMatrix: View {
                 )
                 .frame(width: geometry.size.width, height: geometry.size.height)
         }
+        // The dots never change, but the card redraws on every motion update. Rasterising the
+        // matrix once keeps that redraw from re-filling several thousand circles each frame.
+        .drawingGroup()
         .accessibilityHidden(true)
     }
 
