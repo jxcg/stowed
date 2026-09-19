@@ -162,6 +162,13 @@ where they conflict.
     the motion effect on the card turns on both axes with the phone. No pattern on the border.
 29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
     the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.
+30. **A second card style is under comparison: neon.** A lit sign rather than a playing card:
+    deep ground, two bright inks, a 4pt gradient rim, the trip's own letter or a map pin punched
+    out of a dot matrix, a tick strip along the top, a row of packed emoji, stats under wide
+    labels, and the dates along the bottom. The place name is set in SF Extended. Ten
+    colourways, one per palette, all built the same way. Nothing is borrowed from any
+    particular app: no world map, no plane strip, no machine-readable line. One of the two
+    styles goes once chosen.
 
 On-device only. One user, local persistence, no account, no network.
 
