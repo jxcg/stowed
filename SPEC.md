@@ -167,7 +167,7 @@ where they conflict.
     sweep from a bright shoulder into shadow, raked twice with fine striation, a broad
     highlight that follows the tilt, the two blooms opening up as it turns so each finish shows
     its own colour against the light. Turned well off square, the shine hardens and a few
-    facets catch in the sheet, throwing back the card's own colour; at ordinary angles there is
+    facets catch in the sheet, each throwing back a different part of the spectrum; at ordinary angles there is
     nothing there, and only a whisper of colour. No tiled letter. The same
     rake is laid over the passport print, so both share a surface. Switched from the trips
     menu.

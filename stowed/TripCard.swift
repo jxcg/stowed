@@ -119,7 +119,7 @@ struct TripCard: View {
     private var metalwork: some View {
         ZStack {
             BeadBlastSteel(tilt: tilt, warm: ink.glow, cool: ink.glow2)
-            SteelFacets(trip: trip, colour: ink.facet, showing: extremeTilt)
+            SteelFacets(trip: trip, showing: extremeTilt)
         }
     }
 
@@ -253,10 +253,6 @@ struct NeonInk {
     var splash: Color {
         pearl ? Color(hue: shifted(0.1), saturation: 0.22, brightness: 0.98)
               : (dark ? Color(hue: 0.57, saturation: 0.3, brightness: 0.9) : Color(hue: 0.72, saturation: 0.5, brightness: 0.62))
-    }
-    // What the facets throw back. Light blue, leaning the way the finish does.
-    var facet: Color {
-        pearl ? Color(hue: finish == .champagne ? 0.5 : 0.55, saturation: 0.45, brightness: 0.97) : glow2
     }
     var separation: Color {
         pearl ? Color(white: 0.86) : (dark ? Color(hue: 0.73, saturation: 0.8, brightness: 0.1) : Color(hue: 0.72, saturation: 0.2, brightness: 0.8))
@@ -549,18 +545,28 @@ nonisolated private struct Arc: Shape {
 // well off square, throwing back its own colour. Nothing to see at ordinary angles.
 private struct SteelFacets: View {
     let trip: Trip
-    let colour: Color
     let showing: Double
+
+    // Each facet throws back a different part of the spectrum, the way a scratch in metal does.
+    private static let spectrum: [Color] = [
+        Color(hue: 0.00, saturation: 0.42, brightness: 0.99),
+        Color(hue: 0.09, saturation: 0.45, brightness: 0.99),
+        Color(hue: 0.16, saturation: 0.45, brightness: 0.99),
+        Color(hue: 0.35, saturation: 0.40, brightness: 0.97),
+        Color(hue: 0.53, saturation: 0.45, brightness: 0.98),
+        Color(hue: 0.62, saturation: 0.42, brightness: 0.98),
+        Color(hue: 0.78, saturation: 0.38, brightness: 0.98),
+    ]
 
     var body: some View {
         GeometryReader { geometry in
             let size = geometry.size
             var random = SeededRandom(seed: trip.textureSeed)
             ZStack {
-                ForEach(0..<6, id: \.self) { _ in
+                ForEach(0..<7, id: \.self) { index in
                     let side = 10 + random.unit() * 16
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(colour)
+                        .fill(Self.spectrum[index])
                         .frame(width: side, height: side)
                         .rotationEffect(.degrees(random.unit() * 60 - 30))
                         .position(x: random.unit() * size.width, y: random.unit() * size.height)
