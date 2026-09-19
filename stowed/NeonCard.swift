@@ -7,8 +7,9 @@ struct NeonCard: View {
     let trip: Trip
     var tilt: CGSize = .zero
     var holographic = false
+    @Environment(\.colorScheme) private var scheme
 
-    private var ink: NeonInk { NeonInk(hue: trip.cardPalette.neonHue) }
+    private var ink: NeonInk { NeonInk(accent: trip.cardPalette.neonAccent, dark: scheme == .dark) }
 
     private var days: Int? {
         guard let start = trip.startDate, let end = trip.endDate else { return nil }
@@ -25,6 +26,8 @@ struct NeonCard: View {
         guard let start = trip.startDate else { return "NO DATES" }
         return start.formatted(.dateTime.day().month(.abbreviated).year()).uppercased()
     }
+
+    private var dark: Bool { scheme == .dark }
 
     // How hard the light is hitting it. Nothing at rest, full at a good tilt.
     private var ultraviolet: Double {
@@ -67,7 +70,7 @@ struct NeonCard: View {
         // A fine grain along the rim. Close enough to read as texture rather than a pattern.
         .overlay(
             RoundedRectangle(cornerRadius: 22)
-                .strokeBorder(.white.opacity(0.16), style: StrokeStyle(lineWidth: 4, dash: [1.5, 2.5]))
+                .strokeBorder(Color.white.opacity(dark ? 0.16 : 0.3), style: StrokeStyle(lineWidth: 4, dash: [1.5, 2.5]))
         )
         .aspectRatio(0.72, contentMode: .fit)
         .shadow(color: ink.glow.opacity(0.5), radius: 16, y: 8)
@@ -108,7 +111,7 @@ struct NeonCard: View {
                 }
             }
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(ink.text)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -122,7 +125,7 @@ struct NeonCard: View {
             HStack(alignment: .firstTextBaseline, spacing: 1) {
                 Text(value).font(.system(size: 26, weight: .bold)).monospacedDigit()
                 if let total {
-                    Text("/\(total)").font(.system(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.7))
+                    Text("/\(total)").font(.system(size: 13, weight: .medium)).foregroundStyle(ink.text.opacity(0.7))
                 }
             }
         }
@@ -132,7 +135,7 @@ struct NeonCard: View {
         Text(dateLine)
             .font(.system(size: 9, weight: .medium, design: .monospaced))
             .tracking(2)
-            .foregroundStyle(.white.opacity(0.85))
+            .foregroundStyle(ink.text.opacity(0.85))
             .lineLimit(1)
             .minimumScaleFactor(0.6)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -142,28 +145,33 @@ struct NeonCard: View {
     }
 }
 
-// Ten colourways, one per palette, every one built from the same parts. Everything on a card
-// stays within its own hue: the second ink is a pale tint of the first, never its opposite, so
-// a purple card never picks up a green.
+// One base, two modes (decision 30). The ground is the same on every card: pale blue into
+// lavender by day, deep indigo by night. Only the accent moves from trip to trip, and it never
+// leaves the band between cyan and magenta, so a wall of these still looks like one set.
 struct NeonInk {
-    let hue: Double
+    let accent: Double
+    let dark: Bool
 
-    private func shifted(_ amount: Double) -> Double { (hue + amount + 1).truncatingRemainder(dividingBy: 1) }
+    private func shifted(_ amount: Double) -> Double { (accent + amount + 1).truncatingRemainder(dividingBy: 1) }
 
     var ground: LinearGradient {
-        LinearGradient(colors: [Color(hue: hue, saturation: 0.9, brightness: 0.44),
-                                Color(hue: shifted(0.04), saturation: 1, brightness: 0.18)],
-                       startPoint: .top, endPoint: .bottom)
+        let stops: [Color] = dark
+            ? [Color(hue: 0.70, saturation: 0.78, brightness: 0.46), Color(hue: 0.73, saturation: 0.94, brightness: 0.2)]
+            : [Color(hue: 0.57, saturation: 0.16, brightness: 1), Color(hue: 0.74, saturation: 0.22, brightness: 0.94)]
+        return LinearGradient(colors: stops, startPoint: .top, endPoint: .bottom)
     }
-    var glow: Color { Color(hue: hue, saturation: 0.8, brightness: 1) }
-    // The pale ink. Same colour, most of the saturation taken out.
-    var glow2: Color { Color(hue: shifted(0.03), saturation: 0.32, brightness: 1) }
-    var haze: Color { Color(hue: hue, saturation: 0.85, brightness: 0.5) }
-    // The rim runs from a light tone of the card's own colour into its neighbour, deepened:
-    // magenta into purple, purple into dark blue. Neighbours sit together; opposites fight.
+
+    // The bright ink. Turned down by day so it still reads against a pale ground.
+    var glow: Color { Color(hue: accent, saturation: dark ? 0.8 : 0.9, brightness: dark ? 1 : 0.74) }
+    // The pale ink, a step along from the first.
+    var glow2: Color { Color(hue: shifted(0.05), saturation: dark ? 0.32 : 0.7, brightness: dark ? 1 : 0.62) }
+    var haze: Color { Color(hue: shifted(-0.02), saturation: dark ? 0.85 : 0.3, brightness: dark ? 0.5 : 0.9) }
+    // Everything written on the card.
+    var text: Color { dark ? .white : Color(hue: 0.73, saturation: 0.85, brightness: 0.34) }
+    // The rim runs from the accent into its deepened neighbour. Neighbours sit together.
     var rim: LinearGradient {
-        LinearGradient(colors: [Color(hue: hue, saturation: 0.5, brightness: 1),
-                                Color(hue: shifted(-0.09), saturation: 0.95, brightness: 0.52)],
+        LinearGradient(colors: [Color(hue: accent, saturation: dark ? 0.5 : 0.62, brightness: dark ? 1 : 0.86),
+                                Color(hue: shifted(-0.09), saturation: 0.95, brightness: dark ? 0.52 : 0.6)],
                        startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }
@@ -266,7 +274,7 @@ private struct UltravioletLayer: View {
                 var fibre = Path()
                 fibre.move(to: origin)
                 fibre.addLine(to: CGPoint(x: origin.x + cos(angle) * length, y: origin.y + sin(angle) * length))
-                let tint = random.unit() > 0.5 ? Color.white : fluorescence
+                let tint = random.unit() > 0.5 ? ink.text : fluorescence
                 context.stroke(fibre, with: .color(tint.opacity(0.55 + random.unit() * 0.45)), lineWidth: 1.1)
             }
 
