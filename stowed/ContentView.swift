@@ -85,7 +85,11 @@ struct ContentView: View {
     }
 
     private func card(_ trip: Trip) -> some View {
-        NavigationLink(value: trip) { TripCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning) }
+        // Inset a little so a card never fills the screen edge to edge, and the pile behind shows.
+        NavigationLink(value: trip) {
+            TripCard(trip: trip, tilt: motion.tilt, holographic: motion.isRunning)
+                .padding(.horizontal, 22)
+        }
             .buttonStyle(.plain)
             .contextMenu {
                 Button("Delete", systemImage: "trash", role: .destructive) { tripToDelete = trip }
