@@ -82,6 +82,24 @@ string logic. There are no UI tests; screens are checked by hand and by eye.
 
 CI runs the whole suite on an iPhone 17 simulator for every pull request.
 
+## Deleting a variant
+
+Several things are deliberately built twice so they can be compared, and the losing half is
+meant to be deleted by hand. Each one is self-contained, so removing it is a good first
+exercise in the codebase. Nothing else depends on them.
+
+| To drop | Delete | Then fix |
+|---|---|---|
+| The **fan** trips view | nothing (it shares `WalletView.swift`) | remove `case fan` from `TripsView` and the `.fan` branch in `ContentView`, then the `Layout` enum in `WalletView` |
+| The **wallet** trips view | `WalletView.swift` | remove `case wallet` and its branch, same two places |
+| The **stack** trips view | the `stack` property in `ContentView` | remove `case stack` and its branch |
+| The **deck** trips view | `DeckView.swift` | remove `case deck` and its branch |
+| The **neon** card | `NeonCard.swift`, and `neonHue` in `CardPalette.swift` | remove `case neon` from `CardStyle` and its branch in `ContentView` |
+| The **playing card** | `TripCard.swift`, and `frameGradient`/`stock` in `CardPalette.swift` | remove `case playing` and its branch |
+
+If an enum ends up with one case left, delete the enum and its `@AppStorage` line too, and
+call the surviving view directly. The compiler will point at every place that needs it.
+
 ## Known overlap
 
 `ReturnView`'s tile and `BagVisualView`'s packed item draw similar things for different

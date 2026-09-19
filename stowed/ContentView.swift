@@ -25,7 +25,8 @@ enum CardStyle: String, CaseIterable {
 struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
-    @AppStorage("tripsView") private var view = TripsView.stack
+    // Swiping through playing cards is the way in (decision 27). The other layouts stay for now.
+    @AppStorage("tripsView") private var view = TripsView.deck
     // Off by default (decision 23). Nothing in the simulator; needs a real phone.
     @AppStorage("motionEffect") private var motionEffect = false
     @AppStorage("cardStyle") private var cardStyle = CardStyle.playing
