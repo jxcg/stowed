@@ -137,7 +137,7 @@ struct TripCard: View {
 }
 
 // Film grain: one tiny random-noise tile, made once and tiled across the card.
-private let grain = tile(size: 96) { _, _ in UInt8.random(in: 0...255) }
+let grain = tile(size: 96) { _, _ in UInt8.random(in: 0...255) }
 
 private func tile(size: Int, pixel: (Int, Int) -> UInt8) -> Image {
     let pixels = (0..<size * size).map { pixel($0 % size, $0 / size) }

@@ -162,14 +162,16 @@ where they conflict.
     the motion effect on the card turns on both axes with the phone. No pattern on the border.
 29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
     the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.
-30. **A second card style is under comparison: neon.** A lit sign rather than a playing card:
-    deep ground, a 4pt rim running from a light tone of the card's colour into its
-    deepened neighbour, with a fine grain along it, the trip's own letter or a map pin punched out of a dot matrix, a tick
-    strip along the top, a row of packed emoji, stats under wide labels, and the dates along the
-    bottom. The place name is set in SF Extended. Everything on a card stays within its own hue;
-    the second ink is a pale tint of the first, never its opposite, so a purple card never picks
-    up a green. Ten colourways, one per palette. Nothing is borrowed from any particular app.
-    One of the two styles goes once chosen.
+30. **A second card style is under comparison: neon.** One base for every card, two modes:
+    pale blue into lavender by day, deep indigo by night. Only the accent changes from trip to trip,
+    and there are three: cyan, violet, magenta. More than that and the set stops looking like
+    a set. The ground carries splashes of the other mode's base colour, the place's own letter
+    standing behind everything, and grain over the lot, so it never reads as flat. A 4pt rim running from the
+    accent into its deepened neighbour with a fine grain along it, the trip's own letter or a
+    map pin punched out of a dot matrix, a tick strip along the top, a row of packed emoji,
+    stats under wide labels, and the dates along the bottom. The place name is set in SF
+    Extended. Nothing is borrowed from any particular app. One of the two styles goes once
+    chosen.
 
 31. **Under the light, the neon card fluoresces and catches a rainbow.** With the motion effect on, tilting the
     phone brings up security printing the way ultraviolet does on a banknote: fibres through

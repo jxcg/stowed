@@ -66,20 +66,13 @@ enum CardPalette: String, CaseIterable {
         )
     }
 
-    // The other card style's colourway: ten hues, one per palette, spread right across the
-    // spectrum. The gradient is built the same way for all of them.
-    var neonHue: Double {
+    // The other card style's accent. Its base never changes; this is the only thing that moves,
+    // and there are three of them, not ten. More than that and the set stops looking like a set.
+    var neonAccent: Double {
         switch self {
-        case .oxblood: 0.95    // rose
-        case .navy: 0.66       // indigo
-        case .forest: 0.38     // spring
-        case .plum: 0.80       // violet
-        case .slate: 0.58      // azure
-        case .rust: 0.04       // coral
-        case .teal: 0.48       // cyan
-        case .charcoal: 0.72   // ultraviolet
-        case .ochre: 0.12      // amber
-        case .bordeaux: 0.88   // magenta
+        case .teal, .slate, .navy: 0.52        // cyan
+        case .forest, .charcoal, .plum: 0.76   // violet
+        case .bordeaux, .oxblood, .rust, .ochre: 0.89  // magenta
         }
     }
 
