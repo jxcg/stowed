@@ -59,7 +59,7 @@ struct TripCard: View {
         .background(backdrop)
         // Tilt it under the light and the security printing answers, the way a banknote does,
         // with a slick of spectrum across it like the holographic patch on the same note.
-        .overlay(UltravioletLayer(trip: trip, ink: ink, strength: ultraviolet * (ink.pearl ? 0.2 : 1)))
+        .overlay(UltravioletLayer(trip: trip, ink: ink, strength: ultraviolet * (ink.pearl ? 0.22 : 1)))
         .overlay {
             if holographic {
                 LinearGradient(colors: [.red, .yellow, .green, .cyan, .blue, .purple],
