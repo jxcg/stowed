@@ -40,12 +40,37 @@ struct TripCardFlip<Front: View>: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(.secondary)
+                // Cut into the surface rather than printed on it: dark where the tool went in,
+                // a catch of light on the far lip.
+                .shadow(color: .white.opacity(0.7), radius: 0, y: 0.7)
                 .frame(width: 32, height: 32)
-                .background(.regularMaterial, in: Circle())
+                .background { well }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
+    }
+
+    // A shallow well pressed into the card: shadow along the top edge, light along the bottom,
+    // and no fill of its own beyond a slight darkening, so the card shows through it.
+    private var well: some View {
+        Circle()
+            .fill(.black.opacity(0.05))
+            .overlay {
+                Circle()
+                    .stroke(.black.opacity(0.4), lineWidth: 1.6)
+                    .blur(radius: 1.6)
+                    .mask(Circle().fill(LinearGradient(colors: [.black, .clear],
+                                                       startPoint: .top, endPoint: .bottom)))
+            }
+            .overlay {
+                Circle()
+                    .stroke(.white.opacity(0.9), lineWidth: 1.6)
+                    .blur(radius: 1.4)
+                    .mask(Circle().fill(LinearGradient(colors: [.clear, .black],
+                                                       startPoint: .top, endPoint: .bottom)))
+            }
+            .clipShape(Circle())
     }
 }
 
