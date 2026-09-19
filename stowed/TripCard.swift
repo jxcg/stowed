@@ -12,6 +12,8 @@ struct TripCard: View {
     @Environment(\.colorScheme) private var scheme
     // Raised while the card is being thrown, so the printing glimpses through.
     @Environment(\.cardReveal) private var reveal
+    // ponytail: three shapes up for comparison. Two get deleted once one is chosen.
+    @AppStorage("dividerShape") private var dividerShape = DividerShape.crease
 
     private var ink: NeonInk { NeonInk(accent: trip.cardPalette.neonAccent, dark: scheme == .dark, pearl: style == .metal) }
 
@@ -47,7 +49,7 @@ struct TripCard: View {
             DotMatrixMark(trip: trip, ink: ink, tilt: tilt, ultraviolet: ultraviolet)
                 .frame(maxHeight: .infinity)
             if !chips.isEmpty { chipRow }
-            Rectangle().fill(ink.glow.opacity(0.35)).frame(height: 1).padding(.horizontal, 14)
+            SectionDivider(ink: ink, shape: dividerShape)
             details
             footer
         }
@@ -456,4 +458,79 @@ private struct Splashes: View {
 enum CardStyle: String, CaseIterable {
     case passport, metal
     var title: String { self == .passport ? "Passport" : "Metal" }
+}
+
+// Where the card stops being a picture and starts being a record. Three ways to draw that.
+enum DividerShape: String, CaseIterable {
+    case crease, ticket, sweep
+    var title: String {
+        switch self {
+        case .crease: "Crease"
+        case .ticket: "Ticket"
+        case .sweep: "Sweep"
+        }
+    }
+}
+
+private struct SectionDivider: View {
+    let ink: NeonInk
+    let shape: DividerShape
+
+    var body: some View {
+        switch shape {
+        case .crease:
+            // A fold pressed into the sheet: shadow above the line, light below it.
+            VStack(spacing: 0) {
+                Rectangle().fill(.black.opacity(0.18)).frame(height: 1.5)
+                Rectangle().fill(.white.opacity(0.6)).frame(height: 1.5)
+            }
+            .padding(.horizontal, 10)
+
+        case .ticket:
+            // Cut like a stub, with a perforation running between the notches.
+            ZStack {
+                Rectangle()
+                    .fill(ink.text.opacity(0.35))
+                    .frame(height: 1.5)
+                    .mask(
+                        HStack(spacing: 5) {
+                            ForEach(0..<40, id: \.self) { _ in Rectangle().frame(width: 4) }
+                        }
+                    )
+                HStack {
+                    notch
+                    Spacer()
+                    notch
+                }
+            }
+            .frame(height: 16)
+            .padding(.horizontal, -2)
+
+        case .sweep:
+            // The two halves parted by a shallow curve rather than a straight cut.
+            Arc()
+                .stroke(LinearGradient(colors: [.white.opacity(0.5), ink.text.opacity(0.4), .white.opacity(0.5)],
+                                       startPoint: .leading, endPoint: .trailing),
+                        lineWidth: 2.5)
+                .frame(height: 18)
+                .padding(.horizontal, 6)
+        }
+    }
+
+    private var notch: some View {
+        Circle()
+            .fill(.black.opacity(0.22))
+            .frame(width: 14, height: 14)
+            .blendMode(.multiply)
+    }
+}
+
+nonisolated private struct Arc: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.midY - 5))
+        path.addQuadCurve(to: CGPoint(x: rect.maxX, y: rect.midY - 5),
+                          control: CGPoint(x: rect.midX, y: rect.midY + 12))
+        return path
+    }
 }
