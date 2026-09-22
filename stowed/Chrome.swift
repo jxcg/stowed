@@ -109,11 +109,16 @@ struct BeadBlastSteel: View {
                            startRadius: 0, endRadius: 300 + lift * 90)
                 .blendMode(.plusLighter)
 
-            // The shoulder of white that slides across as you turn it, hardening with the angle.
+            // The shoulder of white that slides across as you turn it, hardening with the angle
+            // and splitting faintly into warm and cool at its edges, the way light does coming
+            // off a polished surface. At rest the split is zero and this is plain white.
             let hard = min(1, max(0, (hypot(tilt.width, tilt.height) - 6) / 4))
+            let split = lift * 0.12
             LinearGradient(stops: [.init(color: .clear, location: 0.18),
+                                   .init(color: Color(hue: 0.08, saturation: split * 2.4, brightness: 1).opacity(0.3 + hard * 0.2), location: 0.36),
                                    .init(color: .white.opacity(0.5 + hard * 0.3), location: 0.44),
-                                   .init(color: .white.opacity(0.08), location: 0.56),
+                                   .init(color: Color(hue: 0.55, saturation: split * 2.4, brightness: 1).opacity(0.22 + hard * 0.16), location: 0.52),
+                                   .init(color: .white.opacity(0.08), location: 0.6),
                                    .init(color: .black.opacity(0.14), location: 1)],
                            startPoint: .topLeading, endPoint: .bottomTrailing)
                 .offset(x: tilt.width * 5, y: tilt.height * 5)

@@ -115,7 +115,7 @@ final class Item {
         self.addedAt = addedAt
     }
 
-    // Floor of 1. Zero of something is "delete it".
+    // Floor of 1. Item with count of zero means "delete it".
     func changeQuantity(by delta: Int) {
         quantity = max(1, quantity + delta)
     }

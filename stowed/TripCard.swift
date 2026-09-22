@@ -17,7 +17,7 @@ struct TripCard: View {
 
     private var ink: NeonInk {
         NeonInk(accent: trip.cardPalette.neonAccent, dark: scheme == .dark,
-                pearl: style == .metal, finish: trip.cardPalette.metalFinish)
+                pearl: style == .metal, finish: trip.cardPalette.metalFinish, tilt: tilt)
     }
 
     private var days: Int? {
@@ -206,6 +206,7 @@ struct NeonInk {
     // The metal print is pearl: near-white, whatever the system scheme is.
     var pearl = false
     var finish: MetalFinish = .silver
+    var tilt: CGSize = .zero
 
     private func shifted(_ amount: Double) -> Double { (accent + amount + 1).truncatingRemainder(dividingBy: 1) }
 
@@ -250,13 +251,20 @@ struct NeonInk {
     var separation: Color {
         pearl ? Color(white: 0.86) : (dark ? Color(hue: 0.73, saturation: 0.8, brightness: 0.1) : Color(hue: 0.72, saturation: 0.2, brightness: 0.8))
     }
+    // Anodised edges shift colour with the angle you hold them at. This is that, at a whisper:
+    // a few hundredths of a turn around the wheel, and nothing at all when the card is flat.
+    private var edgeShift: Double { max(-0.045, min(0.045, tilt.width / 12 * 0.045)) }
+
     var rim: LinearGradient {
         if pearl {
-            return LinearGradient(colors: [Color(white: 0.97), Color(white: 0.55)],
+            return LinearGradient(colors: [Color(hue: (0.58 + edgeShift + 1).truncatingRemainder(dividingBy: 1),
+                                                 saturation: abs(edgeShift) * 2.2, brightness: 0.97),
+                                           Color(hue: (0.06 - edgeShift + 1).truncatingRemainder(dividingBy: 1),
+                                                 saturation: abs(edgeShift) * 1.8, brightness: 0.55)],
                                   startPoint: .topLeading, endPoint: .bottomTrailing)
         }
-        return LinearGradient(colors: [Color(hue: accent, saturation: dark ? 0.42 : 0.5, brightness: dark ? 0.82 : 0.9),
-                                       Color(hue: shifted(-0.09), saturation: dark ? 0.8 : 0.7, brightness: dark ? 0.46 : 0.68)],
+        return LinearGradient(colors: [Color(hue: shifted(edgeShift), saturation: dark ? 0.42 : 0.5, brightness: dark ? 0.82 : 0.9),
+                                       Color(hue: shifted(-0.09 - edgeShift), saturation: dark ? 0.8 : 0.7, brightness: dark ? 0.46 : 0.68)],
                               startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }
