@@ -10,6 +10,9 @@ struct DeckView<Card: View>: View {
     // How hard it is being thrown, which the top card reads to show its printing.
     @State private var reveal: Double = 0
     @Environment(\.cardTilt) private var tilt
+    // Where the incoming card starts from when you travel by the dots.
+    @State private var entry: CGSize = .zero
+    @AppStorage("motionEffect") private var motionEffect = false
 
     private static var maxVisible: Int { 5 }
 
@@ -20,9 +23,36 @@ struct DeckView<Card: View>: View {
         return Array((trips[start...] + trips[..<start]).prefix(Self.maxVisible))
     }
 
+    // Travelling by the dots fans the next card in from the side it came from, rather than
+    // swapping it in place. Held to the motion setting: with that off, it simply changes.
+    private func travel(to index: Int) {
+        guard index != topIndex % max(1, trips.count) else { return }
+        guard motionEffect else {
+            topIndex = index
+            return
+        }
+        let forward = index > topIndex % max(1, trips.count)
+        // Put the incoming card off to one side without animating that jump...
+        var placement = Transaction()
+        placement.disablesAnimations = true
+        withTransaction(placement) {
+            topIndex = index
+            entry = CGSize(width: forward ? 300 : -300, height: 24)
+        }
+        // ...then let it settle, which is the part you see.
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.78)) { entry = .zero }
+    }
+
     var body: some View {
-        VStack(spacing: 16) {
-            ZStack {
+        // The dots are laid down first so they sit behind the pile: a card dragged low passes
+        // over them rather than under.
+        ZStack(alignment: .bottom) {
+            if trips.count > 1 {
+                DeckDots(count: trips.count, index: topIndex % trips.count) { travel(to: $0) }
+            }
+
+            VStack(spacing: 16) {
+                ZStack {
                 ForEach(Array(visible.enumerated().reversed()), id: \.element.id) { depth, trip in
                     let lie = Lie(trip: trip, depth: depth)
                     card(trip)
@@ -30,17 +60,18 @@ struct DeckView<Card: View>: View {
                         .scaleEffect(1 - CGFloat(depth) * 0.02)
                         .rotationEffect(.degrees(lie.angle))
                         .offset(x: lie.x, y: lie.y)
-                        .offset(depth == 0 ? drag : .zero)
-                        .rotationEffect(depth == 0 ? .degrees(Double(drag.width) / 20) : .zero)
+                        .offset(depth == 0 ? CGSize(width: drag.width + entry.width,
+                                                    height: drag.height + entry.height) : .zero)
+                        .rotationEffect(depth == 0 ? .degrees(Double(drag.width + entry.width) / 20) : .zero)
                         .environment(\.cardReveal, depth == 0 ? reveal : 0)
                         // Only the card on top answers the phone's movement.
                         .environment(\.cardTilt, depth == 0 ? tilt : .zero)
                         .allowsHitTesting(depth == 0)
                 }
             }
-            // The pile as a whole sits heavier the more cards are in it.
-            .shadow(color: .black.opacity(0.06 * Double(min(trips.count, Self.maxVisible))), radius: 18, y: 12)
-            .highPriorityGesture(
+                // The pile as a whole sits heavier the more cards are in it.
+                .shadow(color: .black.opacity(0.06 * Double(min(trips.count, Self.maxVisible))), radius: 18, y: 12)
+                .highPriorityGesture(
                 DragGesture(minimumDistance: 24)
                     .onChanged { value in
                         drag = value.translation
@@ -76,11 +107,11 @@ struct DeckView<Card: View>: View {
                         }
                         withAnimation(.easeOut(duration: 0.45).delay(0.1)) { reveal = 0 }
                     }
-            )
-            .padding(.top, 40)
+                )
+                .padding(.top, 40)
 
-            if trips.count > 1 {
-                DeckDots(count: trips.count, index: topIndex % trips.count) { topIndex = $0 }
+                // Holds the dots' place so nothing shifts when they are behind the cards.
+                Color.clear.frame(height: 22)
             }
         }
         .padding()
