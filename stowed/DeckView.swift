@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 // A pack of cards, stacked imperfectly (decisions 22, 27). Most recent on top. Swipe the top
@@ -10,8 +11,11 @@ struct DeckView<Card: View>: View {
     // How hard it is being thrown, which the top card reads to show its printing.
     @State private var reveal: Double = 0
     @Environment(\.cardTilt) private var tilt
-    // Where the incoming card starts from when you travel by the dots.
-    @State private var entry: CGSize = .zero
+    // How far the card you travelled to still has to rise out of the pile. 1 means it is
+    // still lying in the pack, 0 means seated on top.
+    @State private var entry: Double = 0
+    // Which card is rising, so an older rise cannot unmask a newer one.
+    @State private var rising: Trip.ID?
     @AppStorage("motionEffect") private var motionEffect = false
 
     private static var maxVisible: Int { 5 }
@@ -23,24 +27,30 @@ struct DeckView<Card: View>: View {
         return Array((trips[start...] + trips[..<start]).prefix(Self.maxVisible))
     }
 
-    // Travelling by the dots fans the next card in from the side it came from, rather than
-    // swapping it in place. Held to the motion setting: with that off, it simply changes.
+    // Travelling by the dots lifts the card out of the pack rather than sliding it in from
+    // the side. It starts lying where it sat, under the card above it, and rises into place.
+    // Held to the motion setting: with that off, it simply changes.
     private func travel(to index: Int) {
-        guard index != topIndex % max(1, trips.count) else { return }
+        guard trips.indices.contains(index), index != topIndex % max(1, trips.count) else { return }
         guard motionEffect else {
             topIndex = index
             return
         }
-        let forward = index > topIndex % max(1, trips.count)
-        // Put the incoming card off to one side without animating that jump...
+        // Drop it back into the pack without animating that jump...
+        let card = trips[index].id
         var placement = Transaction()
         placement.disablesAnimations = true
         withTransaction(placement) {
             topIndex = index
-            entry = CGSize(width: forward ? 300 : -300, height: 24)
+            entry = 1
+            rising = card
         }
-        // ...then let it settle, which is the part you see.
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.78)) { entry = .zero }
+        // ...then let it rise, which is the part you see. It comes out in front once it has
+        // settled, and a sweep along the dots hands over cleanly because only the card that
+        // was rising clears the flag.
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.82)) { entry = 0 } completion: {
+            if rising == card { rising = nil }
+        }
     }
 
     var body: some View {
@@ -55,14 +65,20 @@ struct DeckView<Card: View>: View {
                 ZStack {
                 ForEach(Array(visible.enumerated().reversed()), id: \.element.id) { depth, trip in
                     let lie = Lie(trip: trip, depth: depth)
+                    // How much of the rise is left, and where it rises from: at rise 1 it lies
+                    // exactly in the second slot. Only the top card ever rises, so the rest
+                    // multiply by zero and need no second lie.
+                    let rise = depth == 0 ? entry : 0
+                    let from = rise > 0 ? Lie(trip: trip, depth: 1) : lie
                     card(trip)
                         .shadow(color: .black.opacity(0.22), radius: 5, x: lie.x / 2, y: 4)
-                        .scaleEffect(1 - CGFloat(depth) * 0.02)
-                        .rotationEffect(.degrees(lie.angle))
-                        .offset(x: lie.x, y: lie.y)
-                        .offset(depth == 0 ? CGSize(width: drag.width + entry.width,
-                                                    height: drag.height + entry.height) : .zero)
-                        .rotationEffect(depth == 0 ? .degrees(Double(drag.width + entry.width) / 20) : .zero)
+                        .scaleEffect(1 - CGFloat(depth) * 0.02 - 0.02 * rise)
+                        .rotationEffect(.degrees(lie.angle + from.angle * rise))
+                        .offset(x: lie.x + from.x * rise, y: lie.y + from.y * rise)
+                        .offset(depth == 0 ? drag : .zero)
+                        .rotationEffect(depth == 0 ? .degrees(Double(drag.width) / 20) : .zero)
+                        // While it is still rising it belongs under the pack, not over it.
+                        .zIndex(trip.id == rising ? -1 : 0)
                         .environment(\.cardReveal, depth == 0 ? reveal : 0)
                         // Only the card on top answers the phone's movement.
                         .environment(\.cardTilt, depth == 0 ? tilt : .zero)
@@ -74,6 +90,8 @@ struct DeckView<Card: View>: View {
                 .highPriorityGesture(
                 DragGesture(minimumDistance: 24)
                     .onChanged { value in
+                        // A card being thrown is never underneath the pack.
+                        rising = nil
                         drag = value.translation
                         // Under the hand it glimpses; it takes a real throw to light it up.
                         let effortSoFar = hypot(value.predictedEndTranslation.width - value.translation.width,
