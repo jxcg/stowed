@@ -27,28 +27,31 @@ struct DeckView<Card: View>: View {
         return Array((trips[start...] + trips[..<start]).prefix(Self.maxVisible))
     }
 
-    // Travelling by the dots lifts the card out of the pack rather than sliding it in from
-    // the side. It starts lying where it sat, under the card above it, and rises into place.
-    // Held to the motion setting: with that off, it simply changes.
-    private func travel(to index: Int) {
-        guard trips.indices.contains(index), index != topIndex % max(1, trips.count) else { return }
-        guard motionEffect else {
+    // Dragging the dots is one continuous move, not a series of hops. The card sinks back
+    // into the pack as your finger leaves its dot and the next one rises out from under it,
+    // so the pack tracks the finger instead of jumping a card at a time.
+    // Held to the motion setting: with that off, the card simply changes.
+    private func travel(to index: Int, rise: Double) {
+        guard trips.indices.contains(index) else { return }
+        // No animation here: this is following the finger, which is its own animation.
+        var live = Transaction()
+        live.disablesAnimations = true
+        withTransaction(live) {
             topIndex = index
+            entry = motionEffect ? rise : 0
+            // A card only part way out of the pack is still under the card above it.
+            rising = motionEffect && rise > 0 ? trips[index].id : nil
+        }
+    }
+
+    // Let go part way between two dots and the card you landed on finishes rising.
+    private func settle() {
+        guard entry > 0 else {
+            rising = nil
             return
         }
-        // Drop it back into the pack without animating that jump...
-        let card = trips[index].id
-        var placement = Transaction()
-        placement.disablesAnimations = true
-        withTransaction(placement) {
-            topIndex = index
-            entry = 1
-            rising = card
-        }
-        // ...then let it rise, which is the part you see. It comes out in front once it has
-        // settled, and a sweep along the dots hands over cleanly because only the card that
-        // was rising clears the flag.
-        withAnimation(.spring(response: 0.42, dampingFraction: 0.82)) { entry = 0 } completion: {
+        let card = rising
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) { entry = 0 } completion: {
             if rising == card { rising = nil }
         }
     }
@@ -58,7 +61,8 @@ struct DeckView<Card: View>: View {
         // over them rather than under.
         ZStack(alignment: .bottom) {
             if trips.count > 1 {
-                DeckDots(count: trips.count, index: topIndex % trips.count) { travel(to: $0) }
+                DeckDots(count: trips.count, index: topIndex % trips.count,
+                         move: { travel(to: $0, rise: $1) }, settle: settle)
             }
 
             VStack(spacing: 16) {
@@ -161,7 +165,10 @@ private struct Lie {
 private struct DeckDots: View {
     let count: Int
     let index: Int
-    let move: (Int) -> Void
+    // Which dot, and how far the card on it still has to rise: 0 sitting on a dot, 1 halfway
+    // between two.
+    let move: (Int, Double) -> Void
+    let settle: () -> Void
 
     private static var window: Int { 9 }
 
@@ -193,15 +200,19 @@ private struct DeckDots: View {
                         // Hold at either end and it keeps travelling.
                         let reach = max(1, geometry.size.width)
                         let share = min(max(0, value.location.x / reach), 1)
-                        move(Int(round(share * Double(count - 1))))
+                        let place = share * Double(count - 1)
+                        let dot = place.rounded()
+                        move(Int(dot), min(1, abs(place - dot) * 2))
                     }
+                    .onEnded { _ in settle() }
             )
             .animation(.snappy(duration: 0.2), value: index)
         }
         .frame(height: 22)
         .accessibilityLabel("Trip \(index + 1) of \(count)")
         .accessibilityAdjustableAction { direction in
-            move(direction == .increment ? min(count - 1, index + 1) : max(0, index - 1))
+            move(direction == .increment ? min(count - 1, index + 1) : max(0, index - 1), 1)
+            settle()
         }
     }
 }

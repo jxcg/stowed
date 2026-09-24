@@ -157,10 +157,10 @@ where they conflict.
     either way takes the top card off and reveals the next. A card thrown hard leaves faster and
     further than one nudged, the way inertia scrolling carries a flick. Under the deck, behind the cards so one dragged low passes
     over them, sits a run of dots you can drag along to travel it; only a window of dots is
-    drawn however many trips there are. Travelling by the dots lifts the card out of the pack
-    rather than sliding it in from the side: it starts lying in the second slot, drawn under the
-    card that was covering it, and rises into place, coming out in front only once it has
-    settled. With the motion effect off it simply changes.
+    drawn however many trips there are. Dragging the dots is one continuous move: the card
+    sinks back into the second slot as your finger leaves its dot and the next one rises out
+    from under it, drawn under the card covering it until it is seated. Let go part way and it
+    finishes rising. With the motion effect off the card simply changes.
 28. **One card, printed two ways.** The playing card is gone. What is left is a muted ground
     carrying splashes, the trip's mark punched out of metal dots, the place in SF Extended,
     stats under wide labels, the dates along the bottom, and a 4pt rim running into the
