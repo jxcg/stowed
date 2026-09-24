@@ -155,9 +155,10 @@ where they conflict.
     pack imperfectly, each card behind the top one offset and angled by an amount fixed to that
     trip, with its own shadow, and a pile shadow that deepens with the number of trips. Swiping
     either way takes the top card off and reveals the next. A card thrown hard leaves faster and
-    further than one nudged, the way inertia scrolling carries a flick. Under the deck sits a
-    run of dots you can drag along to travel it; only a window of dots is drawn however many
-    trips there are.
+    further than one nudged, the way inertia scrolling carries a flick. Under the deck, behind the cards so one dragged low passes
+    over them, sits a run of dots you can drag along to travel it; only a window of dots is
+    drawn however many trips there are. Travelling by the dots fans the next card in from
+    the side it came from, unless the motion effect is off, in which case it simply changes.
 28. **One card, printed two ways.** The playing card is gone. What is left is a muted ground
     carrying splashes, the trip's mark punched out of metal dots, the place in SF Extended,
     stats under wide labels, the dates along the bottom, and a 4pt rim running into the
