@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 // A pack of cards, stacked imperfectly (decisions 22, 27). Most recent on top. Swipe the top
@@ -10,8 +11,11 @@ struct DeckView<Card: View>: View {
     // How hard it is being thrown, which the top card reads to show its printing.
     @State private var reveal: Double = 0
     @Environment(\.cardTilt) private var tilt
-    // Where the incoming card starts from when you travel by the dots.
-    @State private var entry: CGSize = .zero
+    // How far the card you travelled to still has to rise out of the pile. 1 means it is
+    // still lying in the pack, 0 means seated on top.
+    @State private var entry: Double = 0
+    // Which card is rising, so an older rise cannot unmask a newer one.
+    @State private var rising: Trip.ID?
     @AppStorage("motionEffect") private var motionEffect = false
 
     private static var maxVisible: Int { 5 }
@@ -23,24 +27,33 @@ struct DeckView<Card: View>: View {
         return Array((trips[start...] + trips[..<start]).prefix(Self.maxVisible))
     }
 
-    // Travelling by the dots fans the next card in from the side it came from, rather than
-    // swapping it in place. Held to the motion setting: with that off, it simply changes.
-    private func travel(to index: Int) {
-        guard index != topIndex % max(1, trips.count) else { return }
-        guard motionEffect else {
+    // Dragging the dots is one continuous move, not a series of hops. The card sinks back
+    // into the pack as your finger leaves its dot and the next one rises out from under it,
+    // so the pack tracks the finger instead of jumping a card at a time.
+    // Held to the motion setting: with that off, the card simply changes.
+    private func travel(to index: Int, rise: Double) {
+        guard trips.indices.contains(index) else { return }
+        // No animation here: this is following the finger, which is its own animation.
+        var live = Transaction()
+        live.disablesAnimations = true
+        withTransaction(live) {
             topIndex = index
+            entry = motionEffect ? rise : 0
+            // A card only part way out of the pack is still under the card above it.
+            rising = motionEffect && rise > 0 ? trips[index].id : nil
+        }
+    }
+
+    // Let go part way between two dots and the card you landed on finishes rising.
+    private func settle() {
+        guard entry > 0 else {
+            rising = nil
             return
         }
-        let forward = index > topIndex % max(1, trips.count)
-        // Put the incoming card off to one side without animating that jump...
-        var placement = Transaction()
-        placement.disablesAnimations = true
-        withTransaction(placement) {
-            topIndex = index
-            entry = CGSize(width: forward ? 300 : -300, height: 24)
+        let card = rising
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) { entry = 0 } completion: {
+            if rising == card { rising = nil }
         }
-        // ...then let it settle, which is the part you see.
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.78)) { entry = .zero }
     }
 
     var body: some View {
@@ -48,21 +61,28 @@ struct DeckView<Card: View>: View {
         // over them rather than under.
         ZStack(alignment: .bottom) {
             if trips.count > 1 {
-                DeckDots(count: trips.count, index: topIndex % trips.count) { travel(to: $0) }
+                DeckDots(count: trips.count, index: topIndex % trips.count,
+                         move: { travel(to: $0, rise: $1) }, settle: settle)
             }
 
             VStack(spacing: 16) {
                 ZStack {
                 ForEach(Array(visible.enumerated().reversed()), id: \.element.id) { depth, trip in
                     let lie = Lie(trip: trip, depth: depth)
+                    // How much of the rise is left, and where it rises from: at rise 1 it lies
+                    // exactly in the second slot. Only the top card ever rises, so the rest
+                    // multiply by zero and need no second lie.
+                    let rise = depth == 0 ? entry : 0
+                    let from = rise > 0 ? Lie(trip: trip, depth: 1) : lie
                     card(trip)
                         .shadow(color: .black.opacity(0.22), radius: 5, x: lie.x / 2, y: 4)
-                        .scaleEffect(1 - CGFloat(depth) * 0.02)
-                        .rotationEffect(.degrees(lie.angle))
-                        .offset(x: lie.x, y: lie.y)
-                        .offset(depth == 0 ? CGSize(width: drag.width + entry.width,
-                                                    height: drag.height + entry.height) : .zero)
-                        .rotationEffect(depth == 0 ? .degrees(Double(drag.width + entry.width) / 20) : .zero)
+                        .scaleEffect(1 - CGFloat(depth) * 0.02 - 0.02 * rise)
+                        .rotationEffect(.degrees(lie.angle + from.angle * rise))
+                        .offset(x: lie.x + from.x * rise, y: lie.y + from.y * rise)
+                        .offset(depth == 0 ? drag : .zero)
+                        .rotationEffect(depth == 0 ? .degrees(Double(drag.width) / 20) : .zero)
+                        // While it is still rising it belongs under the pack, not over it.
+                        .zIndex(trip.id == rising ? -1 : 0)
                         .environment(\.cardReveal, depth == 0 ? reveal : 0)
                         // Only the card on top answers the phone's movement.
                         .environment(\.cardTilt, depth == 0 ? tilt : .zero)
@@ -74,6 +94,8 @@ struct DeckView<Card: View>: View {
                 .highPriorityGesture(
                 DragGesture(minimumDistance: 24)
                     .onChanged { value in
+                        // A card being thrown is never underneath the pack.
+                        rising = nil
                         drag = value.translation
                         // Under the hand it glimpses; it takes a real throw to light it up.
                         let effortSoFar = hypot(value.predictedEndTranslation.width - value.translation.width,
@@ -143,7 +165,10 @@ private struct Lie {
 private struct DeckDots: View {
     let count: Int
     let index: Int
-    let move: (Int) -> Void
+    // Which dot, and how far the card on it still has to rise: 0 sitting on a dot, 1 halfway
+    // between two.
+    let move: (Int, Double) -> Void
+    let settle: () -> Void
 
     private static var window: Int { 9 }
 
@@ -175,15 +200,19 @@ private struct DeckDots: View {
                         // Hold at either end and it keeps travelling.
                         let reach = max(1, geometry.size.width)
                         let share = min(max(0, value.location.x / reach), 1)
-                        move(Int(round(share * Double(count - 1))))
+                        let place = share * Double(count - 1)
+                        let dot = place.rounded()
+                        move(Int(dot), min(1, abs(place - dot) * 2))
                     }
+                    .onEnded { _ in settle() }
             )
             .animation(.snappy(duration: 0.2), value: index)
         }
         .frame(height: 22)
         .accessibilityLabel("Trip \(index + 1) of \(count)")
         .accessibilityAdjustableAction { direction in
-            move(direction == .increment ? min(count - 1, index + 1) : max(0, index - 1))
+            move(direction == .increment ? min(count - 1, index + 1) : max(0, index - 1), 1)
+            settle()
         }
     }
 }
