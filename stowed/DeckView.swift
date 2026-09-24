@@ -21,8 +21,15 @@ struct DeckView<Card: View>: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
-            ZStack {
+        // The dots are laid down first so they sit behind the pile: a card dragged low passes
+        // over them rather than under.
+        ZStack(alignment: .bottom) {
+            if trips.count > 1 {
+                DeckDots(count: trips.count, index: topIndex % trips.count) { topIndex = $0 }
+            }
+
+            VStack(spacing: 16) {
+                ZStack {
                 ForEach(Array(visible.enumerated().reversed()), id: \.element.id) { depth, trip in
                     let lie = Lie(trip: trip, depth: depth)
                     card(trip)
@@ -38,9 +45,9 @@ struct DeckView<Card: View>: View {
                         .allowsHitTesting(depth == 0)
                 }
             }
-            // The pile as a whole sits heavier the more cards are in it.
-            .shadow(color: .black.opacity(0.06 * Double(min(trips.count, Self.maxVisible))), radius: 18, y: 12)
-            .highPriorityGesture(
+                // The pile as a whole sits heavier the more cards are in it.
+                .shadow(color: .black.opacity(0.06 * Double(min(trips.count, Self.maxVisible))), radius: 18, y: 12)
+                .highPriorityGesture(
                 DragGesture(minimumDistance: 24)
                     .onChanged { value in
                         drag = value.translation
@@ -76,11 +83,11 @@ struct DeckView<Card: View>: View {
                         }
                         withAnimation(.easeOut(duration: 0.45).delay(0.1)) { reveal = 0 }
                     }
-            )
-            .padding(.top, 40)
+                )
+                .padding(.top, 40)
 
-            if trips.count > 1 {
-                DeckDots(count: trips.count, index: topIndex % trips.count) { topIndex = $0 }
+                // Holds the dots' place so nothing shifts when they are behind the cards.
+                Color.clear.frame(height: 22)
             }
         }
         .padding()
