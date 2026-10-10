@@ -20,25 +20,12 @@ struct TripCard: View {
                 pearl: style == .metal, finish: trip.cardPalette.metalFinish, tilt: tilt)
     }
 
-    private var days: Int? {
-        guard let start = trip.startDate, let end = trip.endDate else { return nil }
-        return max(1, Calendar.current.dateComponents([.day], from: start, to: end).day ?? 1)
-    }
-
-    // First ten distinct emoji, in packing order.
-    private var chips: [String] {
-        var seen = Set<String>()
-        return Array(trip.items.sorted { $0.addedAt < $1.addedAt }.map(\.emoji).filter { seen.insert($0).inserted }.prefix(10))
-    }
-
     private var dateLine: String {
         guard let start = trip.startDate else { return "NO DATES" }
         return start.formatted(.dateTime.day().month(.abbreviated).year()).uppercased()
     }
 
     private var dark: Bool { scheme == .dark }
-    // Fixed to the trip, so the seam lies the same way every launch.
-    private var seamPhase: Double { Double(trip.textureSeed % 100) / 100 }
 
     // How hard the light is hitting it. Nothing at rest, full at a good tilt.
     private var ultraviolet: Double {
@@ -51,9 +38,9 @@ struct TripCard: View {
             TickStrip(ink: ink, ultraviolet: ultraviolet)
             DotMatrixMark(trip: trip, ink: ink, tilt: tilt, ultraviolet: ultraviolet)
                 .frame(maxHeight: .infinity)
-            if !chips.isEmpty { chipRow }
+            TripCardChips(trip: trip, background: ink.haze, border: ink.glow)
             SectionDivider(ink: ink, shape: dividerShape)
-            details
+            TripCardDetails(trip: trip, text: ink.text, shadow: dark ? .black : .white)
             footer
         }
         .background(backdrop)
@@ -99,7 +86,7 @@ struct TripCard: View {
             ink.ground
             if style == .passport { Splashes(trip: trip, ink: ink) }
             if style == .metal {
-                metalwork
+                BeadBlastSteel(tilt: tilt, warm: ink.glow, cool: ink.glow2)
             } else {
                 MonogramField(initial: trip.initial, ink: ink)
             }
@@ -110,70 +97,6 @@ struct TripCard: View {
             }
         }
         .accessibilityHidden(true)
-    }
-
-    // Brushed metal, two seams refracting across it, and a hard specular band the way light
-    // runs off something polished.
-    // Light brushed metal: a pale surface raked twice, with the faintest pearl shift over it.
-    // B: a sheet of steel with a rolled-in finish. The texture is a single small noise tile,
-    // so it costs one draw however large the card gets, and the colour is light landing on it
-    // rather than paint laid over it.
-    private var metalwork: some View {
-        BeadBlastSteel(tilt: tilt, warm: ink.glow, cool: ink.glow2)
-    }
-
-    private var chipRow: some View {
-        HStack(spacing: -5) {
-            ForEach(Array(chips.enumerated()), id: \.offset) { _, emoji in
-                Text(emoji)
-                    .font(.system(size: 13))
-                    .frame(width: 24, height: 24)
-                    .background(Circle().fill(ink.haze))
-                    .overlay(Circle().strokeBorder(ink.glow.opacity(0.6), lineWidth: 0.8))
-            }
-        }
-        .padding(.vertical, 10)
-        .accessibilityHidden(true)
-    }
-
-    private var details: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // SF Extended: the wide cut, so the place name carries the card.
-            Text(trip.name.uppercased())
-                .font(.system(size: 22, weight: .semibold).width(.expanded))
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-
-            HStack(alignment: .top, spacing: 18) {
-                stat("BAGS", "\(trip.bags.count)")
-                stat("ITEMS", "\(trip.items.count)")
-                if let days { stat("DAYS", "\(days)") }
-                Spacer(minLength: 0)
-                if trip.hasStartedReturn {
-                    stat("HOME", "\(trip.returnConfirmedCount)", of: trip.returnExpected.count)
-                }
-            }
-        }
-        .foregroundStyle(ink.text)
-        .shadow(color: (dark ? Color.black : Color.white).opacity(0.55), radius: 4)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
-        .padding(.bottom, 4)
-    }
-
-    private func stat(_ label: String, _ value: String, of total: Int? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(label)
-                .font(.system(size: 9, weight: .semibold).width(.expanded))
-                .foregroundStyle(ink.text.opacity(0.75))
-            HStack(alignment: .firstTextBaseline, spacing: 1) {
-                Text(value).font(.system(size: 26, weight: .bold)).monospacedDigit()
-                if let total {
-                    Text("/\(total)").font(.system(size: 13, weight: .medium)).foregroundStyle(ink.text.opacity(0.7))
-                }
-            }
-        }
     }
 
     private var footer: some View {
@@ -194,78 +117,6 @@ struct TripCard: View {
                                        .init(color: ink.separation.opacity(0.9), location: 1)],
                                startPoint: .top, endPoint: .bottom)
             )
-    }
-}
-
-// One base, two modes (decision 30). The ground is the same on every card: pale blue into
-// lavender by day, deep indigo by night. Only the accent moves from trip to trip, and it never
-// leaves the band between cyan and magenta, so a wall of these still looks like one set.
-struct NeonInk {
-    let accent: Double
-    let dark: Bool
-    // The metal print is pearl: near-white, whatever the system scheme is.
-    var pearl = false
-    var finish: MetalFinish = .silver
-    var tilt: CGSize = .zero
-
-    private func shifted(_ amount: Double) -> Double { (accent + amount + 1).truncatingRemainder(dividingBy: 1) }
-
-    var ground: LinearGradient {
-        if pearl {
-            // BeadBlastSteel paints the surface; this is only what shows through it.
-            return LinearGradient(colors: [Color(white: 0.9), Color(white: 0.55)],
-                                  startPoint: .top, endPoint: .bottom)
-        }
-        let stops: [Color] = dark
-            ? [Color(hue: 0.70, saturation: 0.55, brightness: 0.36), Color(hue: 0.73, saturation: 0.7, brightness: 0.16)]
-            : [Color(hue: 0.58, saturation: 0.1, brightness: 0.99), Color(hue: 0.73, saturation: 0.14, brightness: 0.92)]
-        return LinearGradient(colors: stops, startPoint: .top, endPoint: .bottom)
-    }
-
-    var glow: Color {
-        pearl ? finish.warm
-              : Color(hue: accent, saturation: dark ? 0.5 : 0.55, brightness: dark ? 0.86 : 0.6)
-    }
-    var glow2: Color {
-        pearl ? finish.cool
-              : Color(hue: shifted(0.05), saturation: dark ? 0.22 : 0.45, brightness: dark ? 0.95 : 0.55)
-    }
-    var haze: Color {
-        pearl ? Color(white: 0.88) : Color(hue: shifted(-0.02), saturation: dark ? 0.55 : 0.2, brightness: dark ? 0.44 : 0.92)
-    }
-    var text: Color {
-        pearl ? Color(white: 0.13) : (dark ? .white : Color(hue: 0.73, saturation: 0.7, brightness: 0.3))
-    }
-    // Brushed metal for the dot matrix.
-    var metal: Gradient {
-        if pearl { return Gradient(colors: [Color(white: 0.62), Color(white: 0.34), Color(white: 0.58), Color(white: 0.26)]) }
-        return Gradient(colors: dark
-            ? [Color(white: 1), Color(white: 0.78), Color(white: 0.92), Color(white: 0.6)]
-            : [Color(white: 0.98), Color(white: 0.62), Color(white: 0.85), Color(white: 0.45)])
-    }
-    // The pearl shift, taken from Apple's Siri diagram: blush, lavender, aqua, sage, cream.
-    var splash: Color {
-        pearl ? Color(hue: shifted(0.1), saturation: 0.22, brightness: 0.98)
-              : (dark ? Color(hue: 0.57, saturation: 0.3, brightness: 0.9) : Color(hue: 0.72, saturation: 0.5, brightness: 0.62))
-    }
-    var separation: Color {
-        pearl ? Color(white: 0.86) : (dark ? Color(hue: 0.73, saturation: 0.8, brightness: 0.1) : Color(hue: 0.72, saturation: 0.2, brightness: 0.8))
-    }
-    // Anodised edges shift colour with the angle you hold them at. This is that, at a whisper:
-    // a few hundredths of a turn around the wheel, and nothing at all when the card is flat.
-    private var edgeShift: Double { max(-0.045, min(0.045, tilt.width / 12 * 0.045)) }
-
-    var rim: LinearGradient {
-        if pearl {
-            return LinearGradient(colors: [Color(hue: (0.58 + edgeShift + 1).truncatingRemainder(dividingBy: 1),
-                                                 saturation: abs(edgeShift) * 2.2, brightness: 0.97),
-                                           Color(hue: (0.06 - edgeShift + 1).truncatingRemainder(dividingBy: 1),
-                                                 saturation: abs(edgeShift) * 1.8, brightness: 0.55)],
-                                  startPoint: .topLeading, endPoint: .bottomTrailing)
-        }
-        return LinearGradient(colors: [Color(hue: shifted(edgeShift), saturation: dark ? 0.42 : 0.5, brightness: dark ? 0.82 : 0.9),
-                                       Color(hue: shifted(-0.09 - edgeShift), saturation: dark ? 0.8 : 0.7, brightness: dark ? 0.46 : 0.68)],
-                              startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }
 
@@ -440,7 +291,7 @@ private struct Splashes: View {
     let trip: Trip
     let ink: NeonInk
 
-    // Worked out once from the trip's seed rather than on every redraw: a splash never moves.
+    // Deterministic placement: a splash never moves when the card redraws.
     private struct Placement {
         let centre: UnitPoint
         let spread: CGFloat
@@ -461,7 +312,7 @@ private struct Splashes: View {
             let reach = max(geometry.size.width, geometry.size.height)
             ZStack {
                 ForEach(Array(placements.enumerated()), id: \.offset) { index, spot in
-                    let colour = ink.pearl ? ink.finish.wash[index] : (index == 1 ? ink.glow : ink.splash)
+                    let colour = index == 1 ? ink.glow : ink.splash
                     RadialGradient(colors: [colour.opacity(spot.weight), .clear],
                                    center: spot.centre, startRadius: 0, endRadius: reach * spot.spread)
                 }

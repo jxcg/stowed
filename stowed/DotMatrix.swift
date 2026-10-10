@@ -19,8 +19,7 @@ struct DotMatrix: View {
                 )
                 .frame(width: geometry.size.width, height: geometry.size.height)
         }
-        // The dots never change, but the card redraws on every motion update. Rasterising the
-        // matrix once keeps that redraw from re-filling several thousand circles each frame.
+        // Composite the dots and symbol mask before applying the card's lighting effects.
         .drawingGroup()
         .accessibilityHidden(true)
     }
@@ -32,15 +31,17 @@ struct DotMatrix: View {
                 startPoint: CGPoint(x: 0, y: 0),
                 endPoint: CGPoint(x: size.width * 0.4, y: size.height)
             )
+            var dots = Path()
             var y: CGFloat = 0
             while y < size.height {
                 var x: CGFloat = 0
                 while x < size.width {
-                    context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: dot, height: dot)), with: sheen)
+                    dots.addEllipse(in: CGRect(x: x, y: y, width: dot, height: dot))
                     x += spacing
                 }
                 y += spacing
             }
+            context.fill(dots, with: sheen)
         }
     }
 }

@@ -11,7 +11,6 @@ struct BagVisualView: View {
     // The bag wears the same metal and ink as the trip's card.
     private var ink: NeonInk { NeonInk(accent: bag.trip?.cardPalette.neonAccent ?? 0.76, dark: scheme == .dark) }
     private var checking: Bool { bag.trip?.hasStartedReturn ?? false }
-    private var items: [Item] { bag.items.sorted { $0.addedAt < $1.addedAt } }
 
     private let columns = [GridItem(.adaptive(minimum: 76), spacing: 14)]
 
@@ -23,12 +22,12 @@ struct BagVisualView: View {
                 shell.clipShape(RoundedRectangle(cornerRadius: 18)).padding(8)
                 RoundedRectangle(cornerRadius: 15).strokeBorder(.white.opacity(0.3), lineWidth: 1).padding(13)
 
-                if items.isEmpty {
+                if bag.items.isEmpty {
                     Text("Empty").font(.system(.headline, design: .serif)).foregroundStyle(.white.opacity(0.7))
                         .padding(50)
                 } else {
                     LazyVGrid(columns: columns, spacing: 14) {
-                        ForEach(items) { PackedItem(item: $0, checking: checking, onTap: onTap) }
+                        ForEach(bag.itemsInPackingOrder) { PackedItem(item: $0, checking: checking, onTap: onTap) }
                     }
                     .padding(28)
                 }

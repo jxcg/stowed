@@ -21,10 +21,12 @@ struct DeckView<Card: View>: View {
     private static var maxVisible: Int { 5 }
 
     // From the top of the pile round to the one before it, capped for drawing.
-    private var visible: [Trip] {
+    private var visibleTrips: [Trip] {
         guard !trips.isEmpty else { return [] }
         let start = topIndex % trips.count
-        return Array((trips[start...] + trips[..<start]).prefix(Self.maxVisible))
+        return (0..<min(trips.count, Self.maxVisible)).map { offset in
+            trips[(start + offset) % trips.count]
+        }
     }
 
     // Dragging the dots is one continuous move, not a series of hops. The card sinks back
@@ -67,69 +69,13 @@ struct DeckView<Card: View>: View {
 
             VStack(spacing: 16) {
                 ZStack {
-                ForEach(Array(visible.enumerated().reversed()), id: \.element.id) { depth, trip in
-                    let lie = Lie(trip: trip, depth: depth)
-                    // How much of the rise is left, and where it rises from: at rise 1 it lies
-                    // exactly in the second slot. Only the top card ever rises, so the rest
-                    // multiply by zero and need no second lie.
-                    let rise = depth == 0 ? entry : 0
-                    let from = rise > 0 ? Lie(trip: trip, depth: 1) : lie
-                    card(trip)
-                        .shadow(color: .black.opacity(0.22), radius: 5, x: lie.x / 2, y: 4)
-                        .scaleEffect(1 - CGFloat(depth) * 0.02 - 0.02 * rise)
-                        .rotationEffect(.degrees(lie.angle + from.angle * rise))
-                        .offset(x: lie.x + from.x * rise, y: lie.y + from.y * rise)
-                        .offset(depth == 0 ? drag : .zero)
-                        .rotationEffect(depth == 0 ? .degrees(Double(drag.width) / 20) : .zero)
-                        // While it is still rising it belongs under the pack, not over it.
-                        .zIndex(trip.id == rising ? -1 : 0)
-                        .environment(\.cardReveal, depth == 0 ? reveal : 0)
-                        // Only the card on top answers the phone's movement.
-                        .environment(\.cardTilt, depth == 0 ? tilt : .zero)
-                        .allowsHitTesting(depth == 0)
+                    ForEach(Array(visibleTrips.enumerated().reversed()), id: \.element.id) { depth, trip in
+                        stackedCard(trip, depth: depth)
+                    }
                 }
-            }
                 // The pile as a whole sits heavier the more cards are in it.
                 .shadow(color: .black.opacity(0.06 * Double(min(trips.count, Self.maxVisible))), radius: 18, y: 12)
-                .highPriorityGesture(
-                DragGesture(minimumDistance: 24)
-                    .onChanged { value in
-                        // A card being thrown is never underneath the pack.
-                        rising = nil
-                        drag = value.translation
-                        // Under the hand it glimpses; it takes a real throw to light it up.
-                        let effortSoFar = hypot(value.predictedEndTranslation.width - value.translation.width,
-                                                value.predictedEndTranslation.height - value.translation.height)
-                        reveal = min(0.85, effortSoFar / 420 + abs(value.translation.width) / 900)
-                    }
-                    .onEnded { value in
-                        // How hard it was thrown, not just how far. A flick and a shove should
-                        // not leave at the same speed.
-                        let throwSpeed = hypot(value.predictedEndTranslation.width - value.translation.width,
-                                               value.predictedEndTranslation.height - value.translation.height)
-                        let committed = abs(value.translation.width) > 100 || throwSpeed > 180
-                        guard committed, trips.count > 1 else {
-                            withAnimation(.bouncy) { drag = .zero }
-                            withAnimation(.easeOut(duration: 0.4)) { reveal = 0 }
-                            return
-                        }
-                        // Carry the throw through: a harder swipe flies further and settles sooner.
-                        let effort = min(1.6, 0.35 + throwSpeed / 900)
-                        let exit = value.predictedEndTranslation.width == 0
-                            ? value.translation.width * 3
-                            : value.predictedEndTranslation.width * 1.6
-                        withAnimation(.interpolatingSpring(stiffness: 120 + effort * 130, damping: 18)) {
-                            drag = CGSize(width: exit, height: value.predictedEndTranslation.height * 0.6)
-                        }
-                        // Flash of everything on the way out, then gone.
-                        withAnimation(.easeOut(duration: 0.12)) { reveal = min(1, 0.4 + effort * 0.6) }
-                        withAnimation(.snappy(duration: 0.34 - Double(effort) * 0.12).delay(0.08)) {
-                            topIndex += 1
-                            drag = .zero
-                        }
-                        withAnimation(.easeOut(duration: 0.45).delay(0.1)) { reveal = 0 }
-                    }
-                )
+                .highPriorityGesture(swipeGesture)
                 .padding(.top, 40)
 
                 // Holds the dots' place so nothing shifts when they are behind the cards.
@@ -138,18 +84,82 @@ struct DeckView<Card: View>: View {
         }
         .padding()
     }
+
+    private func stackedCard(_ trip: Trip, depth: Int) -> some View {
+        let placement = CardPlacement(trip: trip, depth: depth)
+        // How much of the rise is left, and where it rises from: at rise 1 it lies
+        // exactly in the second slot. Only the top card ever rises, so the rest
+        // multiply by zero and need no second placement.
+        let rise = depth == 0 ? entry : 0
+        let entryPlacement = rise > 0 ? CardPlacement(trip: trip, depth: 1) : placement
+        return card(trip)
+            .shadow(color: .black.opacity(0.22), radius: 5, x: placement.x / 2, y: 4)
+            .scaleEffect(1 - CGFloat(depth) * 0.02 - 0.02 * rise)
+            .rotationEffect(.degrees(placement.angle + entryPlacement.angle * rise))
+            .offset(x: placement.x + entryPlacement.x * rise, y: placement.y + entryPlacement.y * rise)
+            .offset(depth == 0 ? drag : .zero)
+            .rotationEffect(depth == 0 ? .degrees(Double(drag.width) / 20) : .zero)
+            // While it is still rising it belongs under the pack, not over it.
+            .zIndex(trip.id == rising ? -1 : 0)
+            .environment(\.cardReveal, depth == 0 ? reveal : 0)
+            // Only the card on top answers the phone's movement.
+            .environment(\.cardTilt, depth == 0 ? tilt : .zero)
+            .allowsHitTesting(depth == 0)
+    }
+
+    private var swipeGesture: some Gesture {
+        DragGesture(minimumDistance: 24)
+            .onChanged { value in
+                // A card being thrown is never underneath the pack.
+                rising = nil
+                drag = value.translation
+                // Under the hand it glimpses; it takes a real throw to light it up.
+                let effortSoFar = hypot(value.predictedEndTranslation.width - value.translation.width,
+                                        value.predictedEndTranslation.height - value.translation.height)
+                reveal = min(0.85, effortSoFar / 420 + abs(value.translation.width) / 900)
+            }
+            .onEnded { value in
+                // How hard it was thrown, not just how far. A flick and a shove should
+                // not leave at the same speed.
+                let throwSpeed = hypot(value.predictedEndTranslation.width - value.translation.width,
+                                       value.predictedEndTranslation.height - value.translation.height)
+                let committed = abs(value.translation.width) > 100 || throwSpeed > 180
+                guard committed, trips.count > 1 else {
+                    withAnimation(.bouncy) { drag = .zero }
+                    withAnimation(.easeOut(duration: 0.4)) { reveal = 0 }
+                    return
+                }
+                // Carry the throw through: a harder swipe flies further and settles sooner.
+                let effort = min(1.6, 0.35 + throwSpeed / 900)
+                let exit = value.predictedEndTranslation.width == 0
+                    ? value.translation.width * 3
+                    : value.predictedEndTranslation.width * 1.6
+                withAnimation(.interpolatingSpring(stiffness: 120 + effort * 130, damping: 18)) {
+                    drag = CGSize(width: exit, height: value.predictedEndTranslation.height * 0.6)
+                }
+                // Flash of everything on the way out, then gone.
+                withAnimation(.easeOut(duration: 0.12)) { reveal = min(1, 0.4 + effort * 0.6) }
+                withAnimation(.snappy(duration: 0.34 - Double(effort) * 0.12).delay(0.08)) {
+                    topIndex += 1
+                    drag = .zero
+                }
+                withAnimation(.easeOut(duration: 0.45).delay(0.1)) { reveal = 0 }
+            }
+    }
 }
 
 // How one card happens to lie in the pile. Fixed per trip and depth, so the pack never
 // reshuffles itself while you look at it.
-private struct Lie {
+private struct CardPlacement {
     let angle: Double
     let x: CGFloat
     let y: CGFloat
 
     init(trip: Trip, depth: Int) {
         guard depth > 0 else {
-            angle = 0; x = 0; y = 0
+            angle = 0
+            x = 0
+            y = 0
             return
         }
         var random = SeededRandom(seed: trip.textureSeed)

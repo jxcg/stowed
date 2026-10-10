@@ -42,10 +42,13 @@ final class Trip {
     }
 
     var items: [Item] { bags.flatMap(\.items) }
+    var itemCount: Int { bags.reduce(0) { $0 + $1.items.count } }
 
     // Same matching Finder uses: ignores case and accents, partial words hit.
     func items(matching query: String) -> [Item] {
-        items.filter { $0.name.localizedStandardContains(query) }
+        bags.flatMap { bag in
+            bag.items.filter { $0.name.localizedStandardContains(query) }
+        }
     }
 
     // MARK: Return check (decision 15). No lock, no finish. Just a start.
@@ -58,16 +61,33 @@ final class Trip {
         guard returnStartedAt == nil else { return }
         returnStartedAt = date
         if !reimport {
-            for item in items { item.returning = false }
+            for bag in bags {
+                for item in bag.items { item.returning = false }
+            }
         }
     }
 
     // Live counts. Never stored, so never stale.
     var returnExpected: [Item] { items.filter(\.returning) }
-    var returnConfirmedCount: Int { returnExpected.count(where: \.isReturnConfirmed) }
-    var isReturnComplete: Bool {
-        !returnExpected.isEmpty && returnConfirmedCount == returnExpected.count
+    var returnProgress: ReturnProgress {
+        var expected = 0
+        var confirmed = 0
+        for bag in bags {
+            for item in bag.items where item.returning {
+                expected += 1
+                if item.isReturnConfirmed { confirmed += 1 }
+            }
+        }
+        return ReturnProgress(expected: expected, confirmed: confirmed)
     }
+}
+
+struct ReturnProgress {
+    let expected: Int
+    let confirmed: Int
+
+    // Nothing expected home is not a completed check.
+    var isComplete: Bool { expected > 0 && confirmed == expected }
 }
 
 @Model
@@ -81,6 +101,8 @@ final class Bag {
         self.name = name
         self.emoji = emoji
     }
+
+    var itemsInPackingOrder: [Item] { items.sorted { $0.addedAt < $1.addedAt } }
 
     // Typing "T-shirt" again bumps the count instead of making a second row (decision 14).
     func add(_ name: String, emoji: String) {

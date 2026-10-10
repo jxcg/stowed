@@ -24,15 +24,16 @@ struct TripDetailView: View {
                 List {
                     Section("Return") {
                         if trip.hasStartedReturn {
+                            let progress = trip.returnProgress
                             NavigationLink {
                                 ReturnView(trip: trip)
                             } label: {
                                 HStack {
                                     Text("Return check")
                                     Spacer()
-                                    Text("\(trip.returnConfirmedCount) / \(trip.returnExpected.count)")
+                                    Text("\(progress.confirmed) / \(progress.expected)")
                                         .foregroundStyle(.secondary).monospacedDigit()
-                                    if trip.isReturnComplete {
+                                    if progress.isComplete {
                                         Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.accentColor)
                                             .accessibilityLabel("Complete")
                                     }

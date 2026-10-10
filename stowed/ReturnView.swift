@@ -8,14 +8,15 @@ struct ReturnView: View {
     private let columns = [GridItem(.adaptive(minimum: 88), spacing: 12)]
 
     var body: some View {
+        let progress = trip.returnProgress
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 20) {
-                if trip.isReturnComplete {
+                if progress.isComplete {
                     Label("Everything's accounted for. Safe travels home.", systemImage: "checkmark.seal.fill")
                         .font(.headline)
                         .foregroundStyle(Color.accentColor)
                 }
-                if trip.returnExpected.isEmpty {
+                if progress.expected == 0 {
                     ContentUnavailableView(
                         "Nothing expected home",
                         systemImage: "checklist",
@@ -26,7 +27,7 @@ struct ReturnView: View {
                     if !bag.items.isEmpty {
                         Text("\(bag.emoji) \(bag.name)").font(.headline)
                         LazyVGrid(columns: columns, spacing: 12) {
-                            ForEach(bag.items.sorted { $0.addedAt < $1.addedAt }) { item in
+                            ForEach(bag.itemsInPackingOrder) { item in
                                 ItemTile(item: item)
                             }
                         }
@@ -36,8 +37,8 @@ struct ReturnView: View {
             .padding()
         }
         .navigationTitle("Return check")
-        .navigationSubtitle("\(trip.returnConfirmedCount) / \(trip.returnExpected.count)")
-        .sensoryFeedback(.success, trigger: trip.returnConfirmedCount)
+        .navigationSubtitle("\(progress.confirmed) / \(progress.expected)")
+        .sensoryFeedback(.success, trigger: progress.confirmed)
     }
 }
 

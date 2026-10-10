@@ -87,7 +87,7 @@ private struct PackedBack: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(trip.name.uppercased())
                         .font(.system(size: 15, weight: .semibold).width(.expanded))
-                    Text("\(trip.bags.count) bags · \(trip.items.count) items")
+                    Text("\(trip.bags.count) bags · \(trip.itemCount) items")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -110,7 +110,7 @@ private struct PackedBack: View {
                 .blendMode(.plusLighter)
             }
 
-            if trip.items.isEmpty {
+            if trip.itemCount == 0 {
                 Text("Nothing packed yet")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -124,7 +124,7 @@ private struct PackedBack: View {
                                     Text("\(bag.emoji) \(bag.name)")
                                         .font(.caption.weight(.semibold))
                                         .foregroundStyle(.secondary)
-                                    ForEach(bag.items.sorted { $0.addedAt < $1.addedAt }) { item in
+                                    ForEach(bag.itemsInPackingOrder) { item in
                                         row(item)
                                     }
                                 }
