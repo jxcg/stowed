@@ -27,6 +27,40 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
 
 @Suite struct ReturnSemantics {
 
+    @Test func progressTracksChangesAcrossBags() throws {
+        let context = try makeContext()
+        let (trip, bag) = makeTrip(items: 2, in: context)
+        let other = Bag(name: "Backpack", emoji: "🎒")
+        trip.bags.append(other)
+        let souvenir = Item(name: "Souvenir", emoji: "🎁", quantity: 3, addedAt: at(2))
+        other.items.append(souvenir)
+        trip.startReturn(reimport: true, at: at(1))
+
+        bag.items[0].toggleReturnConfirmed(at: at(2))
+        souvenir.toggleReturnConfirmed(at: at(2))
+        // Excluded items can still carry a confirmation; neither count should include them.
+        souvenir.returning = false
+        #expect(trip.itemCount == 3)
+        #expect(trip.returnProgress.expected == 2)
+        #expect(trip.returnProgress.confirmed == 1)
+        #expect(!trip.returnProgress.isComplete)
+
+        bag.items[1].toggleReturnConfirmed(at: at(3))
+        #expect(trip.returnProgress.isComplete)
+        souvenir.returning = true
+        #expect(trip.returnProgress.expected == 3)
+        #expect(trip.returnProgress.confirmed == 3)
+        #expect(trip.returnProgress.isComplete)
+
+        souvenir.toggleReturnConfirmed()
+        #expect(!trip.returnProgress.isComplete)
+        context.delete(souvenir)
+        try context.save()
+        #expect(trip.itemCount == 2)
+        #expect(trip.returnProgress.expected == 2)
+        #expect(trip.returnProgress.isComplete)
+    }
+
     @Test func tickSetsAndClearsWithNoLock() throws {
         let context = try makeContext()
         let (trip, bag) = makeTrip(items: 1, in: context)
@@ -35,11 +69,11 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
 
         item.toggleReturnConfirmed(at: at(2))
         #expect(item.returnConfirmedAt == at(2))
-        #expect(trip.isReturnComplete)
+        #expect(trip.returnProgress.isComplete)
 
         item.toggleReturnConfirmed()
         #expect(!item.isReturnConfirmed)
-        #expect(!trip.isReturnComplete)
+        #expect(!trip.returnProgress.isComplete)
     }
 
     @Test func startFreshExpectsNothing() throws {
@@ -49,7 +83,7 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
 
         #expect(trip.returnExpected.isEmpty)
         #expect(bag.items.allSatisfy { !$0.returning })
-        #expect(!trip.isReturnComplete)
+        #expect(!trip.returnProgress.isComplete)
         #expect(trip.returnStartedAt == at(1))
     }
 
@@ -105,13 +139,13 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
         let (trip, bag) = makeTrip(items: 3, in: context)
         trip.startReturn(reimport: true, at: at(1))
         for item in bag.items { item.toggleReturnConfirmed(at: at(2)) }
-        #expect(trip.isReturnComplete)
+        #expect(trip.returnProgress.isComplete)
 
         context.delete(bag.items[0])
         try context.save()
 
         #expect(trip.returnExpected.count == 2)
-        #expect(trip.isReturnComplete)
+        #expect(trip.returnProgress.isComplete)
     }
 
     @Test func searchReturnsContainingBag() throws {
@@ -155,8 +189,8 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
         trip.startReturn(reimport: true, at: at(1))
 
         #expect(trip.returnExpected.isEmpty)
-        #expect(trip.returnConfirmedCount == 0)
-        #expect(!trip.isReturnComplete)
+        #expect(trip.returnProgress.confirmed == 0)
+        #expect(!trip.returnProgress.isComplete)
     }
 
     @Test func bagWithNoItems() throws {
@@ -171,12 +205,12 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
         let (trip, bag) = makeTrip(items: 2, in: context)
         trip.startReturn(reimport: true, at: at(1))
         bag.items[0].toggleReturnConfirmed(at: at(2))
-        #expect(trip.returnConfirmedCount == 1 && trip.returnExpected.count == 2)
+        #expect(trip.returnProgress.confirmed == 1 && trip.returnExpected.count == 2)
 
         context.delete(bag.items[0])
         try context.save()
 
-        #expect(trip.returnConfirmedCount == 0)
+        #expect(trip.returnProgress.confirmed == 0)
         #expect(trip.returnExpected.count == 1)
     }
 

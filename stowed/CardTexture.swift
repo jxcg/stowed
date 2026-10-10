@@ -1,8 +1,7 @@
 import CoreGraphics
 import Foundation
 
-// Procedural texture under the grain (decision 24). Drawn from the trip's own initial, dates
-// and name. Seeded from the trip so a card looks the same every launch.
+// Legacy texture choices retained for stored trips. Current cards no longer use them.
 enum CardTexture: String, CaseIterable {
     case scatter, lattice, stamp
 }

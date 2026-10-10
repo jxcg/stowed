@@ -12,7 +12,6 @@ struct BagDetailView: View {
     @FocusState private var addFieldFocused: Bool
 
     private var trimmedNewName: String { newName.trimmingCharacters(in: .whitespacesAndNewlines) }
-    private var sortedItems: [Item] { bag.items.sorted { $0.addedAt < $1.addedAt } }
 
     var body: some View {
         Group {
@@ -53,7 +52,7 @@ struct BagDetailView: View {
                 )
                 .listRowSeparator(.hidden)
             } else {
-                ForEach(sortedItems) { item in
+                ForEach(bag.itemsInPackingOrder) { item in
                     ItemRow(item: item) { itemToEdit = item }
                         .swipeActions {
                             Button("Delete", systemImage: "trash", role: .destructive) { context.delete(item) }

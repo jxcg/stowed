@@ -54,26 +54,7 @@ enum MetalFinish: String, CaseIterable {
         case .champagne: Color(hue: 0.98, saturation: 0.2, brightness: 0.95)
         }
     }
-    // The faint wash under them, four stops.
-    var wash: [Color] {
-        switch self {
-        case .silver:
-            [Color(hue: 0.98, saturation: 0.18, brightness: 0.98),
-             Color(hue: 0.72, saturation: 0.16, brightness: 0.98),
-             Color(hue: 0.50, saturation: 0.18, brightness: 0.98),
-             Color(hue: 0.28, saturation: 0.16, brightness: 0.96)]
-        case .titanium:
-            [Color(hue: 0.74, saturation: 0.16, brightness: 0.98),
-             Color(hue: 0.62, saturation: 0.18, brightness: 0.98),
-             Color(hue: 0.52, saturation: 0.16, brightness: 0.98),
-             Color(hue: 0.66, saturation: 0.12, brightness: 0.95)]
-        case .champagne:
-            [Color(hue: 0.11, saturation: 0.2, brightness: 0.99),
-             Color(hue: 0.05, saturation: 0.16, brightness: 0.98),
-             Color(hue: 0.96, saturation: 0.14, brightness: 0.98),
-             Color(hue: 0.14, saturation: 0.14, brightness: 0.96)]
-        }
-    }
+
 }
 
 extension CardPalette {

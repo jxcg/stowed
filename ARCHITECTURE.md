@@ -21,8 +21,10 @@ fields: `returning` (is it meant to come home), `returnQuantity` (how many of it
 yet", never "lost" — that distinction is why it is a date and not a boolean.
 
 `Trip.startReturn(reimport:)` begins the check. Re-import expects everything you packed;
-start fresh expects nothing until you say otherwise. Progress is computed on every read and
-never stored, so it cannot go stale.
+start fresh expects nothing until you say otherwise. `returnProgress` counts expected and
+confirmed items in one pass. Screens read it once per update; it is never stored, so it
+cannot go stale. `itemCount` sums the bag counts without building a flattened inventory.
+`Bag.itemsInPackingOrder` supplies the same item ordering to every bag presentation.
 
 Every attribute added after v0.1.0 carries a default. Without one, SwiftData cannot migrate
 an existing store, the store silently fails to load, and the app runs with no storage at
@@ -57,18 +59,19 @@ One of them gets deleted once the choice is made.
 | File | Job |
 |---|---|
 | `TripCard.swift` | Draws one trip as a card. |
+| `TripCardSummary.swift` | The emoji row and trip details, separate from the moving light. |
+| `NeonInk.swift` | Shared card and bag colours for passport and metal styles. |
 | `Chrome.swift` | The brushed metal and the prismatic seam, shared by the playing card and the card back. |
 | `DotMatrix.swift` | A symbol punched out of metal dots, and which symbol a trip gets. Used by both card styles. |
 | `TripCardFlip.swift` | The quick view and edit buttons, and the card's back. |
-| `CardPalette.swift` | The ten colours and four suits a card can be, and how its frame is tinted. |
-| `CardTexture.swift` | `SeededRandom`, plus two enums kept only so stored rows still decode. |
+| `CardPalette.swift` | Palette accents and metal finishes, plus legacy suits for stored trips. |
+| `CardTexture.swift` | `SeededRandom` and legacy texture choices for stored trips. |
 | `MotionReader.swift` | The phone's tilt, when the motion effect is switched on. Nothing in the simulator. |
 
-A card's look is **decided once and stored on the trip**: palette, suit and texture are
-random at creation, then fixed forever. That is why two trips never look alike and why a
-card never changes under you. `Trip.textureSeed` turns the trip's name and creation time
-into a number, which `SeededRandom` expands into the scattered glyphs and the angles the
-cards lie at in the deck. Same trip, same pile, every launch.
+A card's palette is **decided once and stored on the trip**. Suit and texture choices are
+also retained for compatibility with existing stores. `Trip.textureSeed` turns the trip's
+name and creation time into a number, which `SeededRandom` expands into the card's visual
+details and its angle in the deck. Same trip, same pile, every launch.
 
 ## Small pieces
 
