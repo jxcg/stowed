@@ -73,10 +73,12 @@ private func tile(size: Int, pixel: (Int, Int) -> UInt8) -> Image {
     return Image(decorative: cgImage, scale: 1)
 }
 
-// A rolled-in, bead-blasted finish: fine even grain rather than directional scratches, under a
-// broad sweep of light. One noise tile and a few gradients, so it is cheap to draw and cheap to
-// animate; nothing here is blurred or sampled per frame.
-// Animatable so the light follows the throw and spring-back, not just their endpoints.
+// The metal card's surface: fine grain under a broad sweep of light.
+// In: the phone's tilt, how far the card has been dragged, and the finish's warm and cool colours.
+// Out: a pale steel background. Tilting moves the light and brings out the colours; pushing the
+// card up the screen moves it toward an imagined overhead lamp and the reflection brightens.
+// Cheap by design: one noise tile and a few gradients, nothing blurred.
+// @Animatable means the light is redrawn through a throw and spring-back, not just at the ends.
 @Animatable
 struct BeadBlastSteel: View {
     var tilt: CGSize = .zero
@@ -86,10 +88,11 @@ struct BeadBlastSteel: View {
 
     var body: some View {
         GeometryReader { geometry in
-            // A virtual overhead source: moving up into it concentrates its reflection.
-            // Normalize by the card size so the response holds across phone sizes.
+            // How far the card has moved, as a share of its own size, so it behaves the same on
+            // every phone. x and y run from -1 to 1; y is negative going up.
             let x = max(-1, min(1, lightOffset.width / max(1, geometry.size.width)))
             let y = max(-1, min(1, lightOffset.height / max(1, geometry.size.height * 0.65)))
+            // 0 at rest, 1 when pushed well up toward the lamp.
             let exposure = smoothstep(-y)
             let lift = min(1, hypot(tilt.width, tilt.height) / 9)
             let hard = max(exposure, min(1, max(0, (hypot(tilt.width, tilt.height) - 6) / 4)))
@@ -136,9 +139,8 @@ struct BeadBlastSteel: View {
                             y: tilt.height * 5 - y * geometry.size.height * 0.12)
                     .blendMode(.overlay)
 
-                // A small bright core with a softer shoulder; stronger contrast makes it read
-                // as a harsh reflection rather than turning the entire sheet white.
-                // Only built while it shows: at rest and face on it is not in the tree at all.
+                // A small bright spot, the lamp's reflection. It grows sharper as the card nears
+                // the lamp. Left out entirely while invisible, so a card at rest costs nothing.
                 let core = max(exposure, lift * 0.65)
                 if core > 0 {
                     RadialGradient(stops: [
@@ -151,9 +153,9 @@ struct BeadBlastSteel: View {
                         .opacity(core)
                 }
 
-                // A narrow alignment with the overhead source, well beyond an ordinary
-                // drag. Use unclamped travel so the coloured shine fades again as the card exits.
-                // The finish's own hues, richer at the sweet spot, with a soft falloff.
+                // A wash of the finish's own colours, only in a narrow band of a long upward
+                // throw (about 0.8 of the card's height). It fades again as the card carries on
+                // off screen. Left out entirely while invisible.
                 let travel = -lightOffset.height / max(1, geometry.size.height)
                 let alignment = travel + tilt.height * 0.008 + x * 0.035
                 let shine = smoothstep(1 - abs(alignment - 0.8) / 0.13)
@@ -178,14 +180,15 @@ struct BeadBlastSteel: View {
     }
 }
 
-// Eases 0...1 in and out, so a light arrives and leaves softly rather than at a hard edge.
+// In: any number. Out: 0 below 0, 1 above 1, and an S-shaped curve between, so a light fades
+// in and out softly rather than switching on at a hard edge.
 private func smoothstep(_ t: CGFloat) -> CGFloat {
     let t = min(1, max(0, t))
     return t * t * (3 - 2 * t)
 }
 
 extension EnvironmentValues {
-    // Translation through the deck's virtual light, independent of the UV reveal and tilt.
+    // How far the top card has been dragged, in points. The metal print uses it to move the light.
     @Entry var cardLightOffset: CGSize = .zero
     // The tilt a card should draw itself at. The deck hands the live value to the card on top
     // and zero to the ones behind, so a motion tick redraws one card instead of five.

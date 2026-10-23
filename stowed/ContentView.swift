@@ -133,8 +133,10 @@ struct ContentView: View {
     }
 }
 
-// Hands the phone's tilt down to the cards. The read happens in this modifier's own body, not
-// in ContentView's, so a motion tick re-runs this and the cards below it, not the whole screen.
+// Passes the phone's tilt down to the cards.
+// In: the motion reader. Out: the same content, with the live tilt available to every card.
+// Reading the tilt here, not in ContentView, means a tilt change redraws the cards and not the
+// whole screen.
 private struct LiveTilt: ViewModifier {
     let motion: MotionReader
 
@@ -143,8 +145,9 @@ private struct LiveTilt: ViewModifier {
     }
 }
 
-// Full material behind the navigation title, dissolving into the cards below it.
-// The safe-area inset follows the system bar's height, including the large title.
+// A frosted strip behind the title that fades out over the top of the cards.
+// In: the height of the title bar (the top safe-area inset).
+// Out: solid frost behind the bar, then a 72pt fade below it. It never takes touches.
 private struct NavigationBlurFade: View {
     let topInset: CGFloat
 
