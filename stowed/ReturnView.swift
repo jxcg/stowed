@@ -84,10 +84,8 @@ private struct ItemTile: View {
         }
         .contextMenu {
             if item.returning {
-                Button("Not returning", systemImage: "arrow.uturn.left.circle") {
-                    item.returning = false
-                    item.returnConfirmedAt = nil
-                }
+                // Keeps the tick, like the bag list does: switch it back and it is still confirmed.
+                Button("Not returning", systemImage: "arrow.uturn.left.circle") { item.returning = false }
                 if item.quantity > 1 {
                     Button("One fewer coming home", systemImage: "minus.circle") {
                         item.returnQuantity = max(1, item.quantityComingHome - 1)
