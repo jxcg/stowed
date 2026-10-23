@@ -6,14 +6,7 @@ enum TripsView: String, CaseIterable {
     // ponytail: wallet and fan are two takes on the same idea, up for comparison (#60).
     // One of them goes once the owner picks.
     case stack, deck, wallet, fan
-    var title: String {
-        switch self {
-        case .stack: "Stack"
-        case .deck: "Deck"
-        case .wallet: "Wallet"
-        case .fan: "Fan"
-        }
-    }
+    var title: String { rawValue.capitalized }
 }
 
 struct ContentView: View {
@@ -54,7 +47,19 @@ struct ContentView: View {
                     }
                 }
             }
+            // Fill the screen so the fade's reader below starts at the top safe-area edge. The
+            // deck alone is shorter and sits centred, which would read an inset of zero.
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Set once here, above the deck, so the deck can hand the live value to the top card
+            // alone. Set inside each card, it overrode that and every card redrew per tick.
+            .modifier(LiveTilt(motion: motion))
+            // Its own reader, so a safe-area change redraws the fade, not the whole screen.
+            .overlay(alignment: .top) {
+                GeometryReader { NavigationBlurFade(topInset: $0.safeAreaInsets.top) }
+                    .allowsHitTesting(false)
+            }
             .navigationTitle("Trips")
+            .toolbarBackground(.hidden, for: .navigationBar)
             .navigationDestination(item: $openTrip) { TripDetailView(trip: $0) }
             .toolbar {
                 Menu("More", systemImage: "ellipsis") {
@@ -80,12 +85,11 @@ struct ContentView: View {
             .confirmationDialog(
                 "Delete \(tripToDelete?.name ?? "trip")?",
                 isPresented: Binding(get: { tripToDelete != nil }, set: { if !$0 { tripToDelete = nil } }),
-                titleVisibility: .visible
-            ) {
-                Button("Delete", role: .destructive) {
-                    if let trip = tripToDelete { context.delete(trip) }
-                }
-            } message: {
+                titleVisibility: .visible,
+                presenting: tripToDelete
+            ) { trip in
+                Button("Delete", role: .destructive) { context.delete(trip) }
+            } message: { _ in
                 Text("Its bags and items go with it.")
             }
         }
@@ -115,10 +119,46 @@ struct ContentView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 22)
-        .environment(\.cardTilt, motion.tilt)
         .contextMenu {
             Button("Delete", systemImage: "trash", role: .destructive) { tripToDelete = trip }
         }
+    }
+}
+
+// Passes the phone's tilt down to the cards.
+// In: the motion reader. Out: the same content, with the live tilt available to every card.
+// Reading the tilt here, not in ContentView, means a tilt change redraws the cards and not the
+// whole screen.
+private struct LiveTilt: ViewModifier {
+    let motion: MotionReader
+
+    func body(content: Content) -> some View {
+        content.environment(\.cardTilt, motion.tilt)
+    }
+}
+
+// A frosted strip behind the title that fades out over the top of the cards.
+// In: the height of the title bar (the top safe-area inset).
+// Out: solid frost behind the bar, then a 72pt fade below it. It never takes touches.
+private struct NavigationBlurFade: View {
+    let topInset: CGFloat
+
+    var body: some View {
+        let fade: CGFloat = 72
+        let height = topInset + fade
+        Rectangle()
+            .fill(.regularMaterial)
+            .frame(height: height)
+            .mask {
+                LinearGradient(stops: [
+                    .init(color: .white, location: 0),
+                    .init(color: .white, location: topInset / height),
+                    .init(color: .white.opacity(0.75), location: (topInset + fade * 0.3) / height),
+                    .init(color: .white.opacity(0.25), location: (topInset + fade * 0.7) / height),
+                    .init(color: .clear, location: 1)
+                ], startPoint: .top, endPoint: .bottom)
+            }
+            .offset(y: -topInset)
     }
 }
 

@@ -12,6 +12,7 @@ struct TripCard: View {
     // Raised while the card is being thrown, so the printing glimpses through.
     @Environment(\.cardReveal) private var reveal
     @Environment(\.cardTilt) private var tilt
+    @Environment(\.cardLightOffset) private var lightOffset
     // ponytail: three shapes up for comparison. Two get deleted once one is chosen.
     @AppStorage("dividerShape") private var dividerShape = DividerShape.crease
 
@@ -86,7 +87,7 @@ struct TripCard: View {
             ink.ground
             if style == .passport { Splashes(trip: trip, ink: ink) }
             if style == .metal {
-                BeadBlastSteel(tilt: tilt, warm: ink.glow, cool: ink.glow2)
+                BeadBlastSteel(tilt: tilt, lightOffset: lightOffset, warm: ink.glow, cool: ink.glow2)
             } else {
                 MonogramField(initial: trip.initial, ink: ink)
             }
@@ -209,8 +210,6 @@ private struct UltravioletLayer: View {
     let ink: NeonInk
     let strength: Double
 
-    private var fluorescence: Color { ink.glow2 }
-
     var body: some View {
         Canvas { context, size in
             var random = SeededRandom(seed: trip.textureSeed)
@@ -223,7 +222,7 @@ private struct UltravioletLayer: View {
                 var fibre = Path()
                 fibre.move(to: origin)
                 fibre.addLine(to: CGPoint(x: origin.x + cos(angle) * length, y: origin.y + sin(angle) * length))
-                let tint = random.unit() > 0.5 ? ink.text : fluorescence
+                let tint = random.unit() > 0.5 ? ink.text : ink.glow2
                 context.stroke(fibre, with: .color(tint.opacity(0.55 + random.unit() * 0.45)), lineWidth: 1.1)
             }
 
@@ -235,14 +234,14 @@ private struct UltravioletLayer: View {
             var thread = Path()
             thread.move(to: CGPoint(x: threadX, y: 0))
             thread.addLine(to: CGPoint(x: threadX, y: size.height))
-            context.stroke(thread, with: .color(fluorescence.opacity(0.7)),
+            context.stroke(thread, with: .color(ink.glow2.opacity(0.7)),
                            style: StrokeStyle(lineWidth: 3, dash: [9, 5]))
 
             // The watermark, only readable under the light.
             let mark = context.resolve(
                 Text(trip.initial)
                     .font(.system(size: size.height * 0.34, weight: .black).width(.expanded))
-                    .foregroundStyle(fluorescence.opacity(0.5))
+                    .foregroundStyle(ink.glow2.opacity(0.5))
             )
             context.draw(mark, at: CGPoint(x: size.width / 2, y: size.height * 0.46), anchor: .center)
         }
@@ -331,13 +330,7 @@ enum CardStyle: String, CaseIterable {
 // Where the card stops being a picture and starts being a record. Three ways to draw that.
 enum DividerShape: String, CaseIterable {
     case crease, ticket, sweep
-    var title: String {
-        switch self {
-        case .crease: "Crease"
-        case .ticket: "Ticket"
-        case .sweep: "Sweep"
-        }
-    }
+    var title: String { rawValue.capitalized }
 }
 
 private struct SectionDivider: View {

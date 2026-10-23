@@ -3,7 +3,7 @@ import SwiftUI
 // Wallet: a few trips held together, the rest behind an ellipsis (issue #60, exploratory).
 // Two collapsed layouts to compare; both open into the same horizontal spread.
 struct WalletView<Card: View>: View {
-    enum Layout: String, CaseIterable { case cascade, fan }
+    enum Layout { case cascade, fan }
 
     let trips: [Trip]
     let layout: Layout
