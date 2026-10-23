@@ -13,12 +13,8 @@ struct NeonInk {
 
     private func shifted(_ amount: Double) -> Double { (accent + amount + 1).truncatingRemainder(dividingBy: 1) }
 
+    // Not drawn on the metal print: BeadBlastSteel covers it completely.
     var ground: LinearGradient {
-        if pearl {
-            // BeadBlastSteel paints the surface; this is only what shows through it.
-            return LinearGradient(colors: [Color(white: 0.9), Color(white: 0.55)],
-                                  startPoint: .top, endPoint: .bottom)
-        }
         let stops: [Color] = dark
             ? [Color(hue: 0.70, saturation: 0.55, brightness: 0.36), Color(hue: 0.73, saturation: 0.7, brightness: 0.16)]
             : [Color(hue: 0.58, saturation: 0.1, brightness: 0.99), Color(hue: 0.73, saturation: 0.14, brightness: 0.92)]
@@ -46,10 +42,9 @@ struct NeonInk {
             ? [Color(white: 1), Color(white: 0.78), Color(white: 0.92), Color(white: 0.6)]
             : [Color(white: 0.98), Color(white: 0.62), Color(white: 0.85), Color(white: 0.45)])
     }
-    // The pearl shift, taken from Apple's Siri diagram: blush, lavender, aqua, sage, cream.
+    // Only the passport print draws splashes.
     var splash: Color {
-        pearl ? Color(hue: shifted(0.1), saturation: 0.22, brightness: 0.98)
-              : (dark ? Color(hue: 0.57, saturation: 0.3, brightness: 0.9) : Color(hue: 0.72, saturation: 0.5, brightness: 0.62))
+        dark ? Color(hue: 0.57, saturation: 0.3, brightness: 0.9) : Color(hue: 0.72, saturation: 0.5, brightness: 0.62)
     }
     var separation: Color {
         pearl ? Color(white: 0.86) : (dark ? Color(hue: 0.73, saturation: 0.8, brightness: 0.1) : Color(hue: 0.72, saturation: 0.2, brightness: 0.8))

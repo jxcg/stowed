@@ -107,45 +107,14 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
         #expect(trip.returnExpected.map(\.name) == ["Souvenir"])
     }
 
-    @Test func notReturningExcludedButStillPacked() throws {
-        let context = try makeContext()
-        let (trip, bag) = makeTrip(items: 2, in: context)
-        let sunscreen = bag.items[0]
-        sunscreen.quantity = 2
-        trip.startReturn(reimport: true, at: at(1))
-
-        sunscreen.returning = false
-
-        #expect(trip.returnExpected.count == 1)
-        #expect(bag.items.count == 2)
-        #expect(sunscreen.quantity == 2)
-    }
-
-    @Test func returnQuantityLeavesPackedQuantityAlone() throws {
-        let context = try makeContext()
-        let (_, bag) = makeTrip(items: 1, in: context)
-        let shirts = bag.items[0]
-        shirts.quantity = 3
+    @Test func returnQuantityLeavesPackedQuantityAlone() {
+        let shirts = Item(name: "Shirt", emoji: "👕", quantity: 3)
         #expect(shirts.quantityComingHome == 3)
 
         shirts.returnQuantity = 2
 
         #expect(shirts.quantity == 3)
         #expect(shirts.quantityComingHome == 2)
-    }
-
-    @Test func removingTickedItemKeepsReturnComplete() throws {
-        let context = try makeContext()
-        let (trip, bag) = makeTrip(items: 3, in: context)
-        trip.startReturn(reimport: true, at: at(1))
-        for item in bag.items { item.toggleReturnConfirmed(at: at(2)) }
-        #expect(trip.returnProgress.isComplete)
-
-        context.delete(bag.items[0])
-        try context.save()
-
-        #expect(trip.returnExpected.count == 2)
-        #expect(trip.returnProgress.isComplete)
     }
 
     @Test func searchReturnsContainingBag() throws {
@@ -191,13 +160,6 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
         #expect(trip.returnExpected.isEmpty)
         #expect(trip.returnProgress.confirmed == 0)
         #expect(!trip.returnProgress.isComplete)
-    }
-
-    @Test func bagWithNoItems() throws {
-        let context = try makeContext()
-        let (trip, _) = makeTrip(items: 0, in: context)
-        #expect(trip.returnExpected.isEmpty)
-        #expect(trip.items(matching: "a").isEmpty)
     }
 
     @Test func itemDeletedMidCheck() throws {

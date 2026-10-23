@@ -33,8 +33,6 @@ final class Trip {
     var initial: String { String(name.prefix(1)).uppercased() }
 
     var cardPalette: CardPalette { CardPalette(rawValue: palette) ?? .oxblood }
-    var cardSuit: CardSuit { CardSuit(rawValue: suit) ?? .spade }
-    var cardTexture: CardTexture { CardTexture(rawValue: texture) ?? .scatter }
 
     // Stable across launches: String.hashValue is not, so sum the scalars instead.
     var textureSeed: UInt64 {
@@ -46,9 +44,7 @@ final class Trip {
 
     // Same matching Finder uses: ignores case and accents, partial words hit.
     func items(matching query: String) -> [Item] {
-        bags.flatMap { bag in
-            bag.items.filter { $0.name.localizedStandardContains(query) }
-        }
+        items.filter { $0.name.localizedStandardContains(query) }
     }
 
     // MARK: Return check (decision 15). No lock, no finish. Just a start.
@@ -61,24 +57,15 @@ final class Trip {
         guard returnStartedAt == nil else { return }
         returnStartedAt = date
         if !reimport {
-            for bag in bags {
-                for item in bag.items { item.returning = false }
-            }
+            for item in items { item.returning = false }
         }
     }
 
     // Live counts. Never stored, so never stale.
     var returnExpected: [Item] { items.filter(\.returning) }
     var returnProgress: ReturnProgress {
-        var expected = 0
-        var confirmed = 0
-        for bag in bags {
-            for item in bag.items where item.returning {
-                expected += 1
-                if item.isReturnConfirmed { confirmed += 1 }
-            }
-        }
-        return ReturnProgress(expected: expected, confirmed: confirmed)
+        let expected = returnExpected
+        return ReturnProgress(expected: expected.count, confirmed: expected.count(where: \.isReturnConfirmed))
     }
 }
 

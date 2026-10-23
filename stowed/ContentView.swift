@@ -6,14 +6,7 @@ enum TripsView: String, CaseIterable {
     // ponytail: wallet and fan are two takes on the same idea, up for comparison (#60).
     // One of them goes once the owner picks.
     case stack, deck, wallet, fan
-    var title: String {
-        switch self {
-        case .stack: "Stack"
-        case .deck: "Deck"
-        case .wallet: "Wallet"
-        case .fan: "Fan"
-        }
-    }
+    var title: String { rawValue.capitalized }
 }
 
 struct ContentView: View {
@@ -92,12 +85,11 @@ struct ContentView: View {
             .confirmationDialog(
                 "Delete \(tripToDelete?.name ?? "trip")?",
                 isPresented: Binding(get: { tripToDelete != nil }, set: { if !$0 { tripToDelete = nil } }),
-                titleVisibility: .visible
-            ) {
-                Button("Delete", role: .destructive) {
-                    if let trip = tripToDelete { context.delete(trip) }
-                }
-            } message: {
+                titleVisibility: .visible,
+                presenting: tripToDelete
+            ) { trip in
+                Button("Delete", role: .destructive) { context.delete(trip) }
+            } message: { _ in
                 Text("Its bags and items go with it.")
             }
         }

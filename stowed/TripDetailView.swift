@@ -80,13 +80,12 @@ struct TripDetailView: View {
         .confirmationDialog(
             "Delete \(bagToDelete?.name ?? "bag")?",
             isPresented: Binding(get: { bagToDelete != nil }, set: { if !$0 { bagToDelete = nil } }),
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                if let bag = bagToDelete { context.delete(bag) }
-            }
-        } message: {
-            Text("Its \(bagToDelete?.items.count ?? 0) items go with it.")
+            titleVisibility: .visible,
+            presenting: bagToDelete
+        ) { bag in
+            Button("Delete", role: .destructive) { context.delete(bag) }
+        } message: { bag in
+            Text("Its \(bag.items.count) items go with it.")
         }
     }
 }
