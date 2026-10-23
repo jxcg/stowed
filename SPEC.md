@@ -161,7 +161,7 @@ where they conflict.
     the cards so one dragged low passes over them, sits a run of dots you can drag along to fan
     through it a card at a time, the same way a swipe does: forward tucks the top card under,
     back brings the bottom one up. Only a window of dots is drawn however many trips there are.
-    With one trip nothing moves. With the motion effect off the card simply changes. (Revised
+    With one trip there are no dots and a swipe springs the card back. With the motion effect off the card simply changes. (Revised
     2026-10-23 by the owner: no card rises out from under the pack; it is a plain deck.)
 28. **One card, printed two ways.** The playing card is gone. What is left is a muted ground
     carrying splashes, the trip's mark punched out of metal dots, the place in SF Extended,

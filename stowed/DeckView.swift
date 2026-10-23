@@ -11,7 +11,8 @@ struct DeckView<Card: View>: View {
     @State private var drag: CGSize = .zero
     // How hard it is being thrown, which the top card reads to show its printing.
     @State private var reveal: Double = 0
-    @Environment(\.cardTilt) private var tilt
+    // True while a thrown card is still flying off, so a second grab cannot catch it mid-air.
+    @State private var throwing = false
     @AppStorage("motionEffect") private var motionEffect = false
 
     private static var maxVisible: Int { 5 }
@@ -21,14 +22,7 @@ struct DeckView<Card: View>: View {
     // Out: at most five trips, top card first. With more than five, the last one is the card
     // that went under most recently, so a swiped card is seen landing at the bottom.
     private var visibleTrips: [Trip] {
-        let count = trips.count
-        guard count > 0 else { return [] }
-        let start = topIndex % count
-        let shown = min(count, Self.maxVisible)
-        // Look up only the cards we draw, so a big pack costs no more than a small one.
-        var drawn = (0..<shown).map { trips[(start + $0) % count] }
-        if count > Self.maxVisible { drawn[shown - 1] = trips[(start + count - 1) % count] }
-        return drawn
+        deckDrawOrder(count: trips.count, top: topIndex, limit: Self.maxVisible).map { trips[$0] }
     }
 
     // Called by the dots.
@@ -37,11 +31,7 @@ struct DeckView<Card: View>: View {
     // back, the bottom card comes up. Animated only when the motion setting is on.
     private func travel(to index: Int) {
         guard trips.indices.contains(index), index != topIndex % trips.count else { return }
-        guard motionEffect else {
-            topIndex = index
-            return
-        }
-        withAnimation(.snappy(duration: 0.3)) { topIndex = index }
+        withAnimation(motionEffect ? .snappy(duration: 0.3) : nil) { topIndex = index }
     }
 
     var body: some View {
@@ -87,8 +77,9 @@ struct DeckView<Card: View>: View {
             // animates, so a swiped card slides behind the pack on its way to the bottom.
             .zIndex(-Double(depth))
             .environment(\.cardReveal, depth == 0 ? reveal : 0)
-            // Only the card on top answers the phone's movement.
-            .environment(\.cardTilt, depth == 0 ? tilt : .zero)
+            // Only the card on top answers the phone's movement. The tilt is zeroed for the rest
+            // here, without the deck reading it, so a tilt change redraws the top card alone.
+            .transformEnvironment(\.cardTilt) { if depth > 0 { $0 = .zero } }
             .environment(\.cardLightOffset, depth == 0 ? drag : .zero)
             .allowsHitTesting(depth == 0)
     }
@@ -100,6 +91,7 @@ struct DeckView<Card: View>: View {
     private var swipeGesture: some Gesture {
         DragGesture(minimumDistance: 24)
             .onChanged { value in
+                guard !throwing else { return }
                 drag = value.translation
                 // Under the hand it glimpses; it takes a real throw to light it up.
                 let effortSoFar = hypot(value.predictedEndTranslation.width - value.translation.width,
@@ -107,6 +99,7 @@ struct DeckView<Card: View>: View {
                 reveal = min(0.85, effortSoFar / 420 + abs(value.translation.width) / 900)
             }
             .onEnded { value in
+                guard !throwing else { return }
                 // How hard it was thrown, not just how far. A flick and a shove should
                 // not leave at the same speed.
                 let throwSpeed = hypot(value.predictedEndTranslation.width - value.translation.width,
@@ -118,22 +111,43 @@ struct DeckView<Card: View>: View {
                     return
                 }
                 // Carry the throw through: a harder swipe flies further and settles sooner.
+                // However gentle, it always travels far enough to clear the pack.
                 let effort = min(1.6, 0.35 + throwSpeed / 900)
-                let exit = value.predictedEndTranslation.width == 0
+                let flung = value.predictedEndTranslation.width == 0
                     ? value.translation.width * 3
                     : value.predictedEndTranslation.width * 1.6
+                let exit = (flung < 0 ? -1 : 1) * max(abs(flung), 420)
+                throwing = true
+                // Flash of everything on the way out.
+                withAnimation(.easeOut(duration: 0.12)) { reveal = min(1, 0.4 + effort * 0.6) }
+                // Two steps, one after the other: first the card flies off while still on top,
+                // then it tucks in at the bottom. Run in one go, the second would cancel the first.
                 withAnimation(.interpolatingSpring(stiffness: 120 + effort * 130, damping: 18)) {
                     drag = CGSize(width: exit, height: value.predictedEndTranslation.height * 0.6)
+                } completion: {
+                    withAnimation(.snappy(duration: 0.34 - Double(effort) * 0.12)) {
+                        topIndex += 1
+                        drag = .zero
+                        reveal = 0
+                    }
+                    throwing = false
                 }
-                // Flash of everything on the way out, then gone.
-                withAnimation(.easeOut(duration: 0.12)) { reveal = min(1, 0.4 + effort * 0.6) }
-                withAnimation(.snappy(duration: 0.34 - Double(effort) * 0.12).delay(0.08)) {
-                    topIndex += 1
-                    drag = .zero
-                }
-                withAnimation(.easeOut(duration: 0.45).delay(0.1)) { reveal = 0 }
             }
     }
+}
+
+// Which trips to draw, by their position in the list.
+// In: how many trips there are, which one is on top (any whole number; it wraps round), and
+// how many cards can be drawn.
+// Out: positions, top card first. If the pack is bigger than the limit, the last one drawn is
+// the card just before the top in the list: the one that went under most recently.
+func deckDrawOrder(count: Int, top: Int, limit: Int) -> [Int] {
+    guard count > 0, limit > 0 else { return [] }
+    let start = top % count
+    // Only the cards drawn are looked up, so a big pack costs no more than a small one.
+    var drawn = (0..<min(count, limit)).map { (start + $0) % count }
+    if count > limit { drawn[limit - 1] = (start + count - 1) % count }
+    return drawn
 }
 
 // How far one card sits out of line in the pack.

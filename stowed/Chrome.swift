@@ -140,40 +140,36 @@ struct BeadBlastSteel: View {
                     .blendMode(.overlay)
 
                 // A small bright spot, the lamp's reflection. It grows sharper as the card nears
-                // the lamp. Left out entirely while invisible, so a card at rest costs nothing.
+                // the lamp.
                 let core = max(exposure, lift * 0.65)
-                if core > 0 {
-                    RadialGradient(stops: [
-                        .init(color: .white.opacity(0.12 + hard * 0.48), location: 0),
-                        .init(color: .white.opacity(0.06 + hard * 0.18), location: 0.22),
-                        .init(color: .clear, location: 1)
-                    ], center: focus, startRadius: 0,
-                       endRadius: geometry.size.width * (0.85 - hard * 0.5))
-                        .blendMode(.plusLighter)
-                        .opacity(core)
-                }
+                RadialGradient(stops: [
+                    .init(color: .white.opacity(0.12 + hard * 0.48), location: 0),
+                    .init(color: .white.opacity(0.06 + hard * 0.18), location: 0.22),
+                    .init(color: .clear, location: 1)
+                ], center: focus, startRadius: 0,
+                   endRadius: geometry.size.width * (0.85 - hard * 0.5))
+                    .blendMode(.plusLighter)
+                    .opacity(core)
 
                 // A wash of the finish's own colours, only in a narrow band of a long upward
                 // throw (about 0.8 of the card's height). It fades again as the card carries on
-                // off screen. Left out entirely while invisible.
+                // off screen.
                 let travel = -lightOffset.height / max(1, geometry.size.height)
                 let alignment = travel + tilt.height * 0.008 + x * 0.035
                 let shine = smoothstep(1 - abs(alignment - 0.8) / 0.13)
-                if shine > 0 {
-                    let drift = -x * 0.18 + tilt.width * 0.008
-                    let height = 0.72 + tilt.height * 0.003
-                    ZStack {
-                        RadialGradient(colors: [warm, warm.opacity(0.55), .clear],
-                                       center: UnitPoint(x: 0.28 + drift, y: height - 0.08),
-                                       startRadius: 0, endRadius: geometry.size.width * 0.75)
-                        RadialGradient(colors: [cool, cool.opacity(0.5), .clear],
-                                       center: UnitPoint(x: 0.78 + drift, y: height + 0.08),
-                                       startRadius: 0, endRadius: geometry.size.width * 0.65)
-                    }
-                    .saturation(2)
-                    .blendMode(.overlay)
-                    .opacity(shine * 0.8)
+                let drift = -x * 0.18 + tilt.width * 0.008
+                let height = 0.72 + tilt.height * 0.003
+                ZStack {
+                    RadialGradient(colors: [warm, warm.opacity(0.55), .clear],
+                                   center: UnitPoint(x: 0.28 + drift, y: height - 0.08),
+                                   startRadius: 0, endRadius: geometry.size.width * 0.75)
+                    RadialGradient(colors: [cool, cool.opacity(0.5), .clear],
+                                   center: UnitPoint(x: 0.78 + drift, y: height + 0.08),
+                                   startRadius: 0, endRadius: geometry.size.width * 0.65)
                 }
+                .saturation(2)
+                .blendMode(.overlay)
+                .opacity(shine * 0.8)
             }
         }
         .accessibilityHidden(true)

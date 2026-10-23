@@ -28,4 +28,18 @@ import Testing
         #expect(track.position(from: 4, translation: -500) == 0)
         #expect(track.position(from: 4, translation: 500) == 19)
     }
+
+    // A small pack draws every card, top first, wrapping round.
+    @Test func smallPackDrawsEveryCard() {
+        #expect(deckDrawOrder(count: 3, top: 1, limit: 5) == [1, 2, 0])
+        #expect(deckDrawOrder(count: 1, top: 7, limit: 5) == [0])
+        #expect(deckDrawOrder(count: 0, top: 0, limit: 5) == [])
+    }
+
+    // A big pack draws the next four, then the card that went under last at the bottom.
+    @Test func bigPackShowsTheCardThatWentUnderLast() {
+        #expect(deckDrawOrder(count: 8, top: 0, limit: 5) == [0, 1, 2, 3, 7])
+        #expect(deckDrawOrder(count: 8, top: 3, limit: 5) == [3, 4, 5, 6, 2])
+        #expect(deckDrawOrder(count: 8, top: 11, limit: 5) == [3, 4, 5, 6, 2])
+    }
 }
