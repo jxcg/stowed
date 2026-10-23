@@ -1,8 +1,7 @@
-import SwiftData
 import SwiftUI
 
 // A pack of cards, stacked imperfectly (decisions 22, 27). Most recent on top. Swipe the top
-// card either way to reach the next trip; the pile wraps round.
+// card either way and it goes to the bottom of the pack, like a real deck.
 struct DeckView<Card: View>: View {
     let trips: [Trip]
     @ViewBuilder let card: (Trip) -> Card
@@ -11,51 +10,32 @@ struct DeckView<Card: View>: View {
     // How hard it is being thrown, which the top card reads to show its printing.
     @State private var reveal: Double = 0
     @Environment(\.cardTilt) private var tilt
-    // How far the card you travelled to still has to rise out of the pile. 1 means it is
-    // still lying in the pack, 0 means seated on top.
-    @State private var entry: Double = 0
-    // Which card is rising, so an older rise cannot unmask a newer one.
-    @State private var rising: Trip.ID?
     @AppStorage("motionEffect") private var motionEffect = false
 
     private static var maxVisible: Int { 5 }
 
-    // From the top of the pile round to the one before it, capped for drawing.
+    // The cards drawn, top first. With a big pack, the bottom slot is always the card that went
+    // under last, so a card you swipe away is seen landing at the bottom, not vanishing.
     private var visibleTrips: [Trip] {
-        guard !trips.isEmpty else { return [] }
-        let start = topIndex % trips.count
-        return (0..<min(trips.count, Self.maxVisible)).map { offset in
-            trips[(start + offset) % trips.count]
-        }
+        let count = trips.count
+        guard count > 0 else { return [] }
+        let start = topIndex % count
+        let shown = min(count, Self.maxVisible)
+        // Only the cards drawn are looked up, however big the pack.
+        var drawn = (0..<shown).map { trips[(start + $0) % count] }
+        if count > Self.maxVisible { drawn[shown - 1] = trips[(start + count - 1) % count] }
+        return drawn
     }
 
-    // Dragging the dots is one continuous move, not a series of hops. The card sinks back
-    // into the pack as your finger leaves its dot and the next one rises out from under it,
-    // so the pack tracks the finger instead of jumping a card at a time.
-    // Held to the motion setting: with that off, the card simply changes.
-    private func travel(to index: Int, rise: Double) {
-        guard trips.indices.contains(index) else { return }
-        // No animation here: this is following the finger, which is its own animation.
-        var live = Transaction()
-        live.disablesAnimations = true
-        withTransaction(live) {
+    // The dots move the pack a card at a time, the way a swipe does: forward tucks the top card
+    // under, back brings the bottom one up. With the motion setting off it simply changes.
+    private func travel(to index: Int) {
+        guard trips.indices.contains(index), index != topIndex % trips.count else { return }
+        guard motionEffect else {
             topIndex = index
-            entry = motionEffect ? rise : 0
-            // A card only part way out of the pack is still under the card above it.
-            rising = motionEffect && rise > 0 ? trips[index].id : nil
-        }
-    }
-
-    // Let go part way between two dots and the card you landed on finishes rising.
-    private func settle() {
-        guard entry > 0 else {
-            rising = nil
             return
         }
-        let card = rising
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) { entry = 0 } completion: {
-            if rising == card { rising = nil }
-        }
+        withAnimation(.snappy(duration: 0.3)) { topIndex = index }
     }
 
     var body: some View {
@@ -63,13 +43,12 @@ struct DeckView<Card: View>: View {
         // over them rather than under.
         ZStack(alignment: .bottom) {
             if trips.count > 1 {
-                DeckDots(count: trips.count, index: topIndex % trips.count,
-                         move: { travel(to: $0, rise: $1) }, settle: settle)
+                DeckDots(count: trips.count, index: topIndex % trips.count, move: travel)
             }
 
             VStack(spacing: 16) {
                 ZStack {
-                    ForEach(Array(visibleTrips.enumerated().reversed()), id: \.element.id) { depth, trip in
+                    ForEach(Array(visibleTrips.enumerated()), id: \.element.id) { depth, trip in
                         stackedCard(trip, depth: depth)
                     }
                 }
@@ -87,31 +66,27 @@ struct DeckView<Card: View>: View {
 
     private func stackedCard(_ trip: Trip, depth: Int) -> some View {
         let placement = CardPlacement(trip: trip, depth: depth)
-        // How much of the rise is left, and where it rises from: at rise 1 it lies
-        // exactly in the second slot. Only the top card ever rises, so the rest
-        // multiply by zero and need no second placement.
-        let rise = depth == 0 ? entry : 0
-        let entryPlacement = rise > 0 ? CardPlacement(trip: trip, depth: 1) : placement
         return card(trip)
             .shadow(color: .black.opacity(0.22), radius: 5, x: placement.x / 2, y: 4)
-            .scaleEffect(1 - CGFloat(depth) * 0.02 - 0.02 * rise)
-            .rotationEffect(.degrees(placement.angle + entryPlacement.angle * rise))
-            .offset(x: placement.x + entryPlacement.x * rise, y: placement.y + entryPlacement.y * rise)
+            .scaleEffect(1 - CGFloat(depth) * 0.02)
+            .rotationEffect(.degrees(placement.angle))
+            .offset(x: placement.x, y: placement.y)
             .offset(depth == 0 ? drag : .zero)
             .rotationEffect(depth == 0 ? .degrees(Double(drag.width) / 20) : .zero)
-            // While it is still rising it belongs under the pack, not over it.
-            .zIndex(trip.id == rising ? -1 : 0)
+            // Depth changes at once while position animates, so a card sent to the bottom
+            // passes behind the pack on its way there. Stated outright, not left to array order,
+            // so it also holds for a card animating out of the drawn set.
+            .zIndex(-Double(depth))
             .environment(\.cardReveal, depth == 0 ? reveal : 0)
             // Only the card on top answers the phone's movement.
             .environment(\.cardTilt, depth == 0 ? tilt : .zero)
+            .environment(\.cardLightOffset, depth == 0 ? drag : .zero)
             .allowsHitTesting(depth == 0)
     }
 
     private var swipeGesture: some Gesture {
         DragGesture(minimumDistance: 24)
             .onChanged { value in
-                // A card being thrown is never underneath the pack.
-                rising = nil
                 drag = value.translation
                 // Under the hand it glimpses; it takes a real throw to light it up.
                 let effortSoFar = hypot(value.predictedEndTranslation.width - value.translation.width,
@@ -175,10 +150,11 @@ private struct CardPlacement {
 private struct DeckDots: View {
     let count: Int
     let index: Int
-    // Which dot, and how far the card on it still has to rise: 0 sitting on a dot, 1 halfway
-    // between two.
-    let move: (Int, Double) -> Void
-    let settle: () -> Void
+    let move: (Int) -> Void
+
+    // Where this drag began, and the dot under it. Keyed by the touch-down point so a drag the
+    // system cancelled (no onEnded) cannot leak its anchor into the next one.
+    @State private var gestureStart: (at: CGPoint, dot: Int)?
 
     private static var window: Int { 9 }
 
@@ -191,7 +167,7 @@ private struct DeckDots: View {
 
     var body: some View {
         GeometryReader { geometry in
-            HStack(spacing: 7) {
+            HStack(spacing: 0) {
                 ForEach(range, id: \.self) { dot in
                     let here = dot == index
                     // Dots shrink toward the ends, so the run looks like it continues past them.
@@ -200,6 +176,7 @@ private struct DeckDots: View {
                         .fill(here ? Color.primary : Color.secondary.opacity(0.4))
                         .frame(width: here ? 8 : max(3, 6 - CGFloat(max(0, 1 - edge)) * 2),
                                height: here ? 8 : max(3, 6 - CGFloat(max(0, 1 - edge)) * 2))
+                        .frame(width: DeckDotTrack.pitch)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -207,22 +184,40 @@ private struct DeckDots: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
-                        // Hold at either end and it keeps travelling.
-                        let reach = max(1, geometry.size.width)
-                        let share = min(max(0, value.location.x / reach), 1)
-                        let place = share * Double(count - 1)
-                        let dot = place.rounded()
-                        move(Int(dot), min(1, abs(place - dot) * 2))
+                        let track = DeckDotTrack(count: count, visible: range, width: geometry.size.width)
+                        // Anchor once: changing the selected dot can shift the visible window.
+                        if gestureStart?.at != value.startLocation {
+                            gestureStart = (value.startLocation, track.index(at: value.startLocation.x))
+                        }
+                        let start = gestureStart?.dot ?? index
+                        move(Int(track.position(from: start, translation: value.translation.width).rounded()))
                     }
-                    .onEnded { _ in settle() }
+                    .onEnded { _ in gestureStart = nil }
             )
             .animation(.snappy(duration: 0.2), value: index)
         }
         .frame(height: 22)
         .accessibilityLabel("Trip \(index + 1) of \(count)")
         .accessibilityAdjustableAction { direction in
-            move(direction == .increment ? min(count - 1, index + 1) : max(0, index - 1), 1)
-            settle()
+            move(direction == .increment ? min(count - 1, index + 1) : max(0, index - 1))
         }
+    }
+}
+
+// Fixed dot slots keep hit positions stable when the selected circle grows.
+struct DeckDotTrack {
+    static let pitch: CGFloat = 15
+    let count: Int
+    let visible: Range<Int>
+    let width: CGFloat
+
+    func index(at x: CGFloat) -> Int {
+        let firstCenter = (width - CGFloat(visible.count) * Self.pitch) / 2 + Self.pitch / 2
+        let slot = Int(((x - firstCenter) / Self.pitch).rounded())
+        return min(visible.upperBound - 1, max(visible.lowerBound, visible.lowerBound + slot))
+    }
+
+    func position(from start: Int, translation: CGFloat) -> Double {
+        min(Double(count - 1), max(0, Double(start) + Double(translation / Self.pitch)))
     }
 }
