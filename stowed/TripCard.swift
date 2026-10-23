@@ -12,6 +12,7 @@ struct TripCard: View {
     // Raised while the card is being thrown, so the printing glimpses through.
     @Environment(\.cardReveal) private var reveal
     @Environment(\.cardTilt) private var tilt
+    @Environment(\.cardLightOffset) private var lightOffset
     // ponytail: three shapes up for comparison. Two get deleted once one is chosen.
     @AppStorage("dividerShape") private var dividerShape = DividerShape.crease
 
@@ -86,7 +87,7 @@ struct TripCard: View {
             ink.ground
             if style == .passport { Splashes(trip: trip, ink: ink) }
             if style == .metal {
-                BeadBlastSteel(tilt: tilt, warm: ink.glow, cool: ink.glow2)
+                BeadBlastSteel(tilt: tilt, lightOffset: lightOffset, warm: ink.glow, cool: ink.glow2)
             } else {
                 MonogramField(initial: trip.initial, ink: ink)
             }

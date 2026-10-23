@@ -54,7 +54,19 @@ struct ContentView: View {
                     }
                 }
             }
+            // Fill the screen so the fade's reader below starts at the top safe-area edge. The
+            // deck alone is shorter and sits centred, which would read an inset of zero.
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Set once here, above the deck, so the deck can hand the live value to the top card
+            // alone. Set inside each card, it overrode that and every card redrew per tick.
+            .modifier(LiveTilt(motion: motion))
+            // Its own reader, so a safe-area change redraws the fade, not the whole screen.
+            .overlay(alignment: .top) {
+                GeometryReader { NavigationBlurFade(topInset: $0.safeAreaInsets.top) }
+                    .allowsHitTesting(false)
+            }
             .navigationTitle("Trips")
+            .toolbarBackground(.hidden, for: .navigationBar)
             .navigationDestination(item: $openTrip) { TripDetailView(trip: $0) }
             .toolbar {
                 Menu("More", systemImage: "ellipsis") {
@@ -115,10 +127,43 @@ struct ContentView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 22)
-        .environment(\.cardTilt, motion.tilt)
         .contextMenu {
             Button("Delete", systemImage: "trash", role: .destructive) { tripToDelete = trip }
         }
+    }
+}
+
+// Hands the phone's tilt down to the cards. The read happens in this modifier's own body, not
+// in ContentView's, so a motion tick re-runs this and the cards below it, not the whole screen.
+private struct LiveTilt: ViewModifier {
+    let motion: MotionReader
+
+    func body(content: Content) -> some View {
+        content.environment(\.cardTilt, motion.tilt)
+    }
+}
+
+// Full material behind the navigation title, dissolving into the cards below it.
+// The safe-area inset follows the system bar's height, including the large title.
+private struct NavigationBlurFade: View {
+    let topInset: CGFloat
+
+    var body: some View {
+        let fade: CGFloat = 72
+        let height = topInset + fade
+        Rectangle()
+            .fill(.regularMaterial)
+            .frame(height: height)
+            .mask {
+                LinearGradient(stops: [
+                    .init(color: .white, location: 0),
+                    .init(color: .white, location: topInset / height),
+                    .init(color: .white.opacity(0.75), location: (topInset + fade * 0.3) / height),
+                    .init(color: .white.opacity(0.25), location: (topInset + fade * 0.7) / height),
+                    .init(color: .clear, location: 1)
+                ], startPoint: .top, endPoint: .bottom)
+            }
+            .offset(y: -topInset)
     }
 }
 
