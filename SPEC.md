@@ -174,13 +174,14 @@ where they conflict.
     its own colour against the light. Turned well off square the shine hardens, but nothing else appears: facets were
     tried and cut for being noisy, and only a whisper of colour. No tiled letter. The same
     rake is laid over the passport print, so both share a surface. Switched from the trips
-    menu.
-29. **Wallet and fan are under comparison.** Two collapsed takes on holding four trips with
-    the rest behind an ellipsis that opens a swipeable spread. One gets deleted once chosen.
+    menu. (Revised 2026-10-23 by the owner: Passport is removed. Every card is Metal, and
+    the picker is gone.)
+29. **Wallet and fan are removed** (owner, 2026-10-23). The trips screen is Stack or Deck.
 30. **One base for every card, two modes**: pale blue into lavender by day, deep indigo by
     night. The colours are muted rather than fluorescent, so they age. Three accents only:
     cyan, violet, magenta. The ground carries the same two splash colours on every card, thrown
     across it differently each time and fixed to the trip, and the place's letter tiled small.
+    (Since Passport was removed, this ground survives only on the bag screen.)
 31. **Only the light moves, not the card.** With the motion effect on the lighting shifts, but
     the card does not rotate: it is part of the phone, and the phone is already moving.
     **The card is plain until it is moved.** Its security printing stays hidden at rest; a tilt
