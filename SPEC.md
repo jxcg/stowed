@@ -1,7 +1,7 @@
 # Stowed — Specification
 
 **Status:** initial specification, agreed 2026-09-18.
-**Owner:** Joshua (owns functionality, scope, acceptance).
+**Product owner:** owns functionality, scope, and acceptance.
 **This document is the source of truth for approved behaviour.** Later decisions amend this
 file rather than living in conversation history. Sections are split into CONFIRMED (owner
 has approved), PROPOSED (engineering suggestion, not yet approved), and OPEN (deliberately
@@ -277,7 +277,7 @@ Not needed for the first version, and **not** to be chosen silently:
 
 Updated 2026-09-18 after round 2.
 
-Repo `jxcg/stowed`, branch `main`. `v0.1.0` tags the first walkable version (§8 rows
+`v0.1.0` tags the first walkable version (§8 rows
 0–8). Round 2 (decisions 12–19) is merged on top of it.
 
 Present: `README.md`, `.gitignore`, `stowedTests` (Swift Testing, 15 tests), shared
