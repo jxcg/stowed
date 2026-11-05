@@ -43,26 +43,22 @@ all. A test in `ReturnTests.swift` fails if a new mandatory attribute forgets it
 
 ## Trip layouts
 
-The trips screen can draw its cards four ways, chosen from the toolbar menu and remembered.
+The trips screen can draw its cards two ways, chosen from the toolbar menu and remembered.
 
 | File | Job |
 |---|---|
 | `ContentView.swift` | `stack`: a plain vertical scroll of cards. |
 | `DeckView.swift` | `deck`: a pack of cards, most recent on top, swipe either way for the next. |
-| `WalletView.swift` | `wallet` and `fan`: four trips held, the rest behind an ellipsis that opens a swipeable spread. |
-
-`wallet` and `fan` are two takes on the same idea, both live so they can be compared.
-One of them gets deleted once the choice is made.
 
 ## The card
 
 | File | Job |
 |---|---|
-| `TripCard.swift` | Draws one trip as a card. |
+| `TripCard.swift` | Draws one trip as a metal card. |
 | `TripCardSummary.swift` | The emoji row and trip details, separate from the moving light. |
-| `NeonInk.swift` | Shared card and bag colours for passport and metal styles. |
-| `Chrome.swift` | The brushed metal and the prismatic seam, shared by the playing card and the card back. |
-| `DotMatrix.swift` | A symbol punched out of metal dots, and which symbol a trip gets. Used by both card styles. |
+| `NeonInk.swift` | The metal card's inks, and the accent-tinted ground and rim the bag screen uses. |
+| `Chrome.swift` | The steel surface and its light, the prismatic seam on the card back, and the card environment values. |
+| `DotMatrix.swift` | A symbol punched out of metal dots, and which symbol a trip gets. |
 | `TripCardFlip.swift` | The quick view and edit buttons, and the card's back. |
 | `CardPalette.swift` | Palette accents and metal finishes, plus legacy suits for stored trips. |
 | `CardTexture.swift` | `SeededRandom` and legacy texture choices for stored trips. |
@@ -96,8 +92,6 @@ exercise in the codebase. Nothing else depends on them.
 
 | To drop | Delete | Then fix |
 |---|---|---|
-| The **fan** trips view | nothing (it shares `WalletView.swift`) | remove `case fan` from `TripsView` and the `.fan` branch in `ContentView`, then the `Layout` enum in `WalletView` |
-| The **wallet** trips view | `WalletView.swift` | remove `case wallet` and its branch, same two places |
 | The **stack** trips view | the `stack` property in `ContentView` | remove `case stack` and its branch |
 | The **deck** trips view | `DeckView.swift` | remove `case deck` and its branch |
 

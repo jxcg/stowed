@@ -1,8 +1,27 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import stowed
 
 @Suite struct DeckDotTrackTests {
+    @MainActor
+    @Test(arguments: zip(["wallet", "fan", "stack", "deck"],
+                         [TripsView.deck, .deck, .stack, .deck]))
+    func savedLayoutKeepsSupportedChoicesOrFallsBackToDeck(saved: String, expected: TripsView) throws {
+        let suite = UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(saved, forKey: "tripsView")
+
+        let selection = AppStorage(wrappedValue: TripsView.deck, "tripsView", store: defaults)
+        #expect(selection.wrappedValue == expected)
+
+        selection.wrappedValue = .stack
+        #expect(defaults.string(forKey: "tripsView") == "stack")
+        let restored = AppStorage(wrappedValue: TripsView.deck, "tripsView", store: defaults)
+        #expect(restored.wrappedValue == .stack)
+    }
+
     @Test func tapsMatchCenteredDots() {
         let track = DeckDotTrack(count: 2, visible: 0..<2, width: 360)
         #expect(track.index(at: 172.5) == 0)
