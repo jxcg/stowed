@@ -43,7 +43,7 @@ struct TripCard: View {
             TripCardDetails(trip: trip, text: ink.text, shadow: dark ? .black : .white)
             footer
         }
-        .background(backdrop)
+        .background(BeadBlastSteel(tilt: tilt, lightOffset: lightOffset, warm: ink.glow, cool: ink.glow2))
         // Tilt it under the light and the security printing answers, the way a banknote does,
         // with a slick of spectrum across it like the holographic patch on the same note.
         .overlay {
@@ -77,10 +77,6 @@ struct TripCard: View {
         .aspectRatio(0.72, contentMode: .fit)
         .shadow(color: .black.opacity(0.16), radius: 10, y: 6)
         .accessibilityElement(children: .combine)
-    }
-
-    private var backdrop: some View {
-        BeadBlastSteel(tilt: tilt, lightOffset: lightOffset, warm: ink.glow, cool: ink.glow2)
     }
 
     private var footer: some View {

@@ -163,34 +163,26 @@ where they conflict.
     back brings the bottom one up. Only a window of dots is drawn however many trips there are.
     With one trip there are no dots and a swipe springs the card back. With the motion effect off the card simply changes. (Revised
     2026-10-23 by the owner: no card rises out from under the pack; it is a plain deck.)
-28. **One card, printed two ways.** The playing card is gone. What is left is a muted ground
-    carrying splashes, the trip's mark punched out of metal dots, the place in SF Extended,
-    stats under wide labels, the dates along the bottom, and a 4pt rim running into the
-    neighbouring hue. **Passport** prints it plain, with grain. **Metal** comes in three finishes, silver, titanium and
-    champagne, fixed to the trip. The sheet is the same grey in all three; only the colour of
-    the light landing on it changes. It is a sheet of brushed steel: a tonal
-    sweep from a bright shoulder into shadow, raked twice with fine striation, a broad
-    highlight that follows the tilt, the two blooms opening up as it turns so each finish shows
-    its own colour against the light. Turned well off square the shine hardens, but nothing else appears: facets were
-    tried and cut for being noisy, and only a whisper of colour. No tiled letter. The same
-    rake is laid over the passport print, so both share a surface. Switched from the trips
-    menu. (Revised 2026-10-23 by the owner: Passport is removed. Every card is Metal, and
-    the picker is gone.)
-29. **Wallet and fan are removed** (owner, 2026-10-23). The trips screen is Stack or Deck.
-30. **One base for every card, two modes**: pale blue into lavender by day, deep indigo by
-    night. The colours are muted rather than fluorescent, so they age. Three accents only:
-    cyan, violet, magenta. The ground carries the same two splash colours on every card, thrown
-    across it differently each time and fixed to the trip, and the place's letter tiled small.
-    (Since Passport was removed, this ground survives only on the bag screen.)
+28. **Every trip uses the Metal card** (confirmed 2026-11-05). Passport and the Card picker
+    are removed. The trip's mark is punched out of metal dots, the place is in SF Extended,
+    stats sit under wide labels, and dates run along the bottom. Silver, titanium and
+    champagne finishes stay fixed to each trip. All three share the same steel ground;
+    the finish changes the warm and cool light, not the stored trip data. The grain,
+    highlights, subtle rim colour and existing divider choices remain.
+29. **Wallet and fan are removed.** The trips screen is Stack or Deck. A previously saved
+    Wallet or Fan preference falls back to Deck; supported choices remain remembered.
+30. **The visual bag keeps its own ground and rim.** Pale blue into lavender by day, deep
+    indigo by night, with cyan, violet or magenta accents. Removing Passport must not change
+    this shared bag styling. Existing trips, bags, items, return records and legacy stored
+    card attributes are retained; this presentation cleanup makes no storage migration.
 31. **Only the light moves, not the card.** With the motion effect on the lighting shifts, but
     the card does not rotate: it is part of the phone, and the phone is already moving.
     **The card is plain until it is moved.** Its security printing stays hidden at rest; a tilt
     brings it up, and so does a throw, in proportion to how hard the card was swiped.
     **Under the light, the card fluoresces and catches a rainbow.** With the motion effect on, tilting the
-    phone brings up security printing the way ultraviolet does on a banknote: fibres through
-    the stock, a dashed thread down one side, and the trip's letter watermarked across the
-    middle, plus a slick of spectrum sweeping across like a holographic patch. It all fades
-    back to nothing when the phone is held still. The playing card gets the spectrum band only.
+    phone brings up fine fibres through the steel, plus a slick of spectrum sweeping across
+    like a holographic patch. The old Passport thread and letter watermark are removed;
+    the Metal light effects remain.
 32. **Cards have a back.** A faint wash of light sits behind the trip's name and is gone by
     the time the list starts, with the same marker as the front. Two buttons sit in the corner of every card and turn over with it;
     the back carries its own pair, with back in place of quick view (revised 2026-10-23). Quick view turns the card over to everything packed, grouped by bag and

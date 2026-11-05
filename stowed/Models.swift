@@ -29,9 +29,6 @@ final class Trip {
         self.texture = texture.rawValue
     }
 
-    // The letter on the card, in the corners and as the watermark.
-    var initial: String { String(name.prefix(1)).uppercased() }
-
     var cardPalette: CardPalette { CardPalette(rawValue: palette) ?? .oxblood }
 
     // Stable across launches: String.hashValue is not, so sum the scalars instead.
