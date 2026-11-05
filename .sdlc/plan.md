@@ -1,13 +1,12 @@
 ---
 tracker: github
-github_repo: jxcg/stowed
 key: STW
 ---
 
 # Stowed — plan (2026-09-18)
 
 Source of truth for behaviour is `SPEC.md`. This plan only says how we get through it.
-**No Jira.** Tickets are GitHub issues on `jxcg/stowed`; `STW-n` means issue `#n`.
+**No Jira.** Tickets are this repository's GitHub issues; `STW-n` means issue `#n`.
 
 ## Goal
 
@@ -34,11 +33,23 @@ Bottom-up, in SPEC §8 order: hygiene → model + tests → screens in journey o
 Model first because every screen reads the same expected-set rule; test it once and the
 UI tickets stay thin. Expected-set logic lives in one method on `Checkpoint`, not in views.
 
-## Workflow (agreed 2026-09-18)
+## Workflow (updated 2026-11-05)
 
 - One issue in flight at a time.
-- Branch per issue, named `stw-<n>-<slug>`, cut from `main`.
-- Moving to Review = PR opened with `gh`, referencing `Closes #n`. Joshua merges on GitHub.
+- Create or identify the GitHub issue before writing code, including bugs found during development.
+- Branch per issue, named `ft/ref-<number>`, cut from `main`; never commit or push to `main`.
+- Use conventional commit subjects and PR titles. Keep each PR body to three to five bullets,
+  including its issue reference, verification evidence, and any remaining limitations.
+- Evaluate each PR with three separate review agents: one for pros, one for cons, then a judge
+  who weighs their evidence and states any approval conditions.
+- For bug fixes, write and run a regression test before changing production code, observe it
+  fail on the original behavior, then make the smallest fix and rerun that test and the relevant
+  existing suite to verify they pass.
+- Moving to Review = branch pushed and PR opened with `gh`, referencing `Closes #n`.
+  Wait for explicit owner approval before merging; a review verdict is not merge authorization.
+- Keep links, personal attribution, PR titles, and private session metadata out of repository
+  content. Inspect complete outgoing commit messages and GitHub text before publishing;
+  private context must not appear in either.
 - Column moves are issue comments: what was done, what was verified, what to check.
 - Commits only when asked.
 
