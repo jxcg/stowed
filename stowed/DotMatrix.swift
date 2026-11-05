@@ -1,7 +1,7 @@
 import SwiftUI
 
 // A symbol punched out of a field of dots, the dots catching one gradient across the whole
-// field so they read as metal. Used by both card styles.
+// field so they read as metal.
 struct DotMatrix: View {
     let symbol: String
     let metal: Gradient

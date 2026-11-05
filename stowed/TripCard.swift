@@ -1,13 +1,12 @@
 import SwiftUI
 
-// A trip, drawn once (decision 30): metal and light. A muted ground carrying splashes, a
-// prismatic seam across it, the trip's mark punched out of metal dots, the place set in SF
-// Extended, and the dates along the bottom. Same data, no new model fields.
+// A trip as a metal card (decisions 28, 30).
+// In: the trip, and whether the motion effect is running.
+// Out: a pale steel card with the trip's mark punched out of metal dots, the place in SF
+// Extended and the dates along the bottom. Tilt the phone and the light moves across it.
 struct TripCard: View {
     let trip: Trip
     var holographic = false
-    // Passport is the plain printed card; metal adds chrome, seams and a specular band.
-    var style: CardStyle = .metal
     @Environment(\.colorScheme) private var scheme
     // Raised while the card is being thrown, so the printing glimpses through.
     @Environment(\.cardReveal) private var reveal
@@ -18,7 +17,7 @@ struct TripCard: View {
 
     private var ink: NeonInk {
         NeonInk(accent: trip.cardPalette.neonAccent, dark: scheme == .dark,
-                pearl: style == .metal, finish: trip.cardPalette.metalFinish, tilt: tilt)
+                finish: trip.cardPalette.metalFinish, tilt: tilt)
     }
 
     private var dateLine: String {
@@ -49,7 +48,7 @@ struct TripCard: View {
         // with a slick of spectrum across it like the holographic patch on the same note.
         .overlay {
             if ultraviolet > 0.01 {
-                UltravioletLayer(trip: trip, ink: ink, strength: ultraviolet * (ink.pearl ? 0.22 : 1))
+                UltravioletLayer(trip: trip, ink: ink, strength: ultraviolet * 0.22)
             }
         }
         .overlay {
@@ -63,41 +62,25 @@ struct TripCard: View {
                                        startPoint: .topLeading, endPoint: .bottomTrailing)
                         .offset(x: tilt.width * 9, y: tilt.height * 9)
                     )
-                    .opacity(ink.pearl ? 0.14 : 0.28)
+                    .opacity(0.14)
                     .blendMode(.plusLighter)
                     .allowsHitTesting(false)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 22))
-        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(ink.rim, lineWidth: 4))
+        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(ink.metalRim, lineWidth: 4))
         // A fine grain along the rim. Close enough to read as texture rather than a pattern.
         .overlay(
             RoundedRectangle(cornerRadius: 22)
                 .strokeBorder(Color.white.opacity(dark ? 0.1 : 0.2), style: StrokeStyle(lineWidth: 4, dash: [1.5, 2.5]))
         )
         .aspectRatio(0.72, contentMode: .fit)
-        .shadow(color: .black.opacity(style == .metal ? 0.16 : 0.12), radius: 10, y: 6)
+        .shadow(color: .black.opacity(0.16), radius: 10, y: 6)
         .accessibilityElement(children: .combine)
     }
 
-    // The ground is not just a gradient: colour thrown in from the other mode's base, the
-    // place's own letter standing behind everything, and grain over the lot.
     private var backdrop: some View {
-        ZStack {
-            ink.ground
-            if style == .passport { Splashes(trip: trip, ink: ink) }
-            if style == .metal {
-                BeadBlastSteel(tilt: tilt, lightOffset: lightOffset, warm: ink.glow, cool: ink.glow2)
-            } else {
-                MonogramField(initial: trip.initial, ink: ink)
-            }
-            if style == .passport {
-                grain.resizable(resizingMode: .tile)
-                    .opacity(dark ? 0.11 : 0.15)
-                    .blendMode(dark ? .overlay : .multiply)
-            }
-        }
-        .accessibilityHidden(true)
+        BeadBlastSteel(tilt: tilt, lightOffset: lightOffset, warm: ink.glow, cool: ink.glow2)
     }
 
     private var footer: some View {
@@ -171,8 +154,8 @@ private struct DotMatrixMark: View {
         GeometryReader { geometry in
             let reach = min(geometry.size.width, geometry.size.height)
             ZStack {
-                RadialGradient(colors: [ink.glow.opacity((ink.pearl ? 0.16 : (ink.dark ? 0.34 : 0.25)) + ultraviolet * (ink.pearl ? 0.1 : 0.25)),
-                                        ink.glow.opacity((ink.pearl ? 0.07 : (ink.dark ? 0.14 : 0.1)) + ultraviolet * 0.08),
+                RadialGradient(colors: [ink.glow.opacity(0.16 + ultraviolet * 0.1),
+                                        ink.glow.opacity(0.07 + ultraviolet * 0.08),
                                         .clear],
                                center: .center, startRadius: 0, endRadius: reach * (0.68 + ultraviolet * 0.18))
                 DotMatrix(symbol: TripSymbol.forTrip(trip), metal: ink.metal)
@@ -180,7 +163,7 @@ private struct DotMatrixMark: View {
                     // surface does and stands clear of the texture.
                     .overlay {
                         LinearGradient(stops: [.init(color: .clear, location: 0.3),
-                                               .init(color: .white.opacity(ink.pearl ? 0.3 : 0.85), location: 0.48),
+                                               .init(color: .white.opacity(0.3), location: 0.48),
                                                .init(color: .clear, location: 0.66)],
                                        startPoint: .topLeading, endPoint: .bottomTrailing)
                             .offset(x: -tilt.width * 7, y: -tilt.height * 7)
@@ -189,9 +172,9 @@ private struct DotMatrixMark: View {
                     }
                     // Lifted off the sheet: its own contact shadow, thrown opposite the tilt.
                     .shadow(color: .black.opacity(0.3), radius: 3, x: -tilt.width * 0.5, y: 2 - tilt.height * 0.5)
-                    .shadow(color: .white.opacity(ink.pearl ? 0.12 : (ink.dark ? 0.5 : 0.3)), radius: 7 + ultraviolet * 6)
-                    .shadow(color: ink.glow.opacity(ink.pearl ? 0.2 : 0.35 + ultraviolet * 0.35), radius: 18 + ultraviolet * 10)
-                    .brightness(ultraviolet * (ink.pearl ? 0.04 : 0.18))
+                    .shadow(color: .white.opacity(0.12), radius: 7 + ultraviolet * 6)
+                    .shadow(color: ink.glow.opacity(0.2), radius: 18 + ultraviolet * 10)
+                    .brightness(ultraviolet * 0.04)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
@@ -202,9 +185,10 @@ private struct DotMatrixMark: View {
     }
 }
 
-// What the card hides until light of the right kind falls on it: fibres through the stock, a
-// thread down one side, and the trip's own letter watermarked across the middle. Only drawn
-// while the motion effect is on and the phone is actually tilted.
+// What the card hides until light of the right kind falls on it.
+// In: the trip, its inks, and how strongly the light is hitting (0 to 1).
+// Out: fine fibres scattered through the steel, placed the same way every time for this trip.
+// Only drawn while the motion effect is on and the phone is actually tilted.
 private struct UltravioletLayer: View {
     let trip: Trip
     let ink: NeonInk
@@ -225,25 +209,6 @@ private struct UltravioletLayer: View {
                 let tint = random.unit() > 0.5 ? ink.text : ink.glow2
                 context.stroke(fibre, with: .color(tint.opacity(0.55 + random.unit() * 0.45)), lineWidth: 1.1)
             }
-
-            // On a pale sheet the fibres are enough; a thread and a watermark just burn out.
-            guard !ink.pearl else { return }
-
-            // The thread, dashed, running the height of the card.
-            let threadX = size.width * 0.82
-            var thread = Path()
-            thread.move(to: CGPoint(x: threadX, y: 0))
-            thread.addLine(to: CGPoint(x: threadX, y: size.height))
-            context.stroke(thread, with: .color(ink.glow2.opacity(0.7)),
-                           style: StrokeStyle(lineWidth: 3, dash: [9, 5]))
-
-            // The watermark, only readable under the light.
-            let mark = context.resolve(
-                Text(trip.initial)
-                    .font(.system(size: size.height * 0.34, weight: .black).width(.expanded))
-                    .foregroundStyle(ink.glow2.opacity(0.5))
-            )
-            context.draw(mark, at: CGPoint(x: size.width / 2, y: size.height * 0.46), anchor: .center)
         }
         .blendMode(.plusLighter)
         .opacity(strength)
@@ -251,80 +216,6 @@ private struct UltravioletLayer: View {
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
-}
-
-// The place's letter, tiled small across the ground. Close to invisible on its own; it is there
-// to stop the card reading as a flat sheet of colour.
-private struct MonogramField: View {
-    let initial: String
-    let ink: NeonInk
-
-    var body: some View {
-        Canvas { context, size in
-            let glyph = context.resolve(
-                Text(initial)
-                    .font(.system(size: 22, weight: .black).width(.expanded))
-                    .foregroundStyle(ink.text.opacity(0.07))
-            )
-            let step: CGFloat = 54
-            var row = 0
-            var y: CGFloat = -step / 2
-            while y < size.height + step {
-                var x: CGFloat = row.isMultiple(of: 2) ? 0 : step / 2
-                while x < size.width + step {
-                    context.draw(glyph, at: CGPoint(x: x, y: y), anchor: .center)
-                    x += step
-                }
-                y += step * 0.8
-                row += 1
-            }
-        }
-        .accessibilityHidden(true)
-    }
-}
-
-// The same two colours on every card, thrown across the ground differently each time. Where
-// they land and how hard they hit is fixed to the trip, so one card never looks like the next
-// and the set still looks like a set.
-private struct Splashes: View {
-    let trip: Trip
-    let ink: NeonInk
-
-    // Deterministic placement: a splash never moves when the card redraws.
-    private struct Placement {
-        let centre: UnitPoint
-        let spread: CGFloat
-        let weight: Double
-    }
-
-    private var placements: [Placement] {
-        var random = SeededRandom(seed: trip.textureSeed)
-        return (0..<2).map { _ in
-            Placement(centre: UnitPoint(x: random.unit(), y: random.unit()),
-                      spread: 0.35 + random.unit() * 0.55,
-                      weight: 0.12 + random.unit() * 0.24)
-        }
-    }
-
-    var body: some View {
-        GeometryReader { geometry in
-            let reach = max(geometry.size.width, geometry.size.height)
-            ZStack {
-                ForEach(Array(placements.enumerated()), id: \.offset) { index, spot in
-                    let colour = index == 1 ? ink.glow : ink.splash
-                    RadialGradient(colors: [colour.opacity(spot.weight), .clear],
-                                   center: spot.centre, startRadius: 0, endRadius: reach * spot.spread)
-                }
-            }
-        }
-        .accessibilityHidden(true)
-    }
-}
-
-// Two ways to print the same card (decision 28).
-enum CardStyle: String, CaseIterable {
-    case passport, metal
-    var title: String { self == .passport ? "Passport" : "Metal" }
 }
 
 // Where the card stops being a picture and starts being a record. Three ways to draw that.

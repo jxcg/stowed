@@ -2,23 +2,21 @@ import SwiftData
 import SwiftUI
 
 // Two ways to see your trips (decision 22): a scrolling stack, or a pile you swipe through.
+// A phone that had wallet or fan saved falls back to the deck.
 enum TripsView: String, CaseIterable {
-    // ponytail: wallet and fan are two takes on the same idea, up for comparison (#60).
-    // One of them goes once the owner picks.
-    case stack, deck, wallet, fan
+    case stack, deck
     var title: String { rawValue.capitalized }
 }
 
 struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
-    // Swiping through playing cards is the way in (decision 27). The other layouts stay for now.
+    // Swiping through the pack is the way in (decision 27).
     @AppStorage("tripsView") private var view = TripsView.deck
     // Off by default (decision 23). Nothing in the simulator; needs a real phone.
     @AppStorage("motionEffect") private var motionEffect = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var motion = MotionReader()
-    @AppStorage("cardStyle") private var cardStyle = CardStyle.metal
     @AppStorage("dividerShape") private var dividerShape = DividerShape.crease
     @State private var isAdding = false
     @State private var tripToDelete: Trip?
@@ -41,8 +39,6 @@ struct ContentView: View {
                 } else {
                     switch view {
                     case .deck: DeckView(trips: orderedTrips) { card($0) }
-                    case .wallet: WalletView(trips: orderedTrips, layout: .cascade) { card($0) }
-                    case .fan: WalletView(trips: orderedTrips, layout: .fan) { card($0) }
                     case .stack: stack
                     }
                 }
@@ -68,9 +64,6 @@ struct ContentView: View {
                     }
                     Picker("Divider", selection: $dividerShape) {
                         ForEach(DividerShape.allCases, id: \.self) { Text($0.title).tag($0) }
-                    }
-                    Picker("Card", selection: $cardStyle) {
-                        ForEach(CardStyle.allCases, id: \.self) { Text($0.title).tag($0) }
                     }
                     Toggle("Motion effect", isOn: $motionEffect)
                 }
@@ -114,7 +107,7 @@ struct ContentView: View {
         // Inset a little so a card never fills the screen edge to edge, and the pile behind shows.
         TripCardFlip(trip: trip, onEdit: { openTrip = trip }) {
             Button { openTrip = trip } label: {
-                TripCard(trip: trip, holographic: motion.isRunning, style: cardStyle)
+                TripCard(trip: trip, holographic: motion.isRunning)
             }
             .buttonStyle(.plain)
         }
