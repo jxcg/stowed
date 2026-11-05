@@ -41,14 +41,14 @@ enum EmojiGuess {
         ("pillow", "🛏️"), ("mask", "😷"), ("pen", "🖊️"), ("notebook", "📓"), ("map", "🗺️"),
         ("lock", "🔒"), ("souvenir", "🎁"), ("gift", "🎁"), ("toy", "🧸"), ("nappy", "🍼"), ("diaper", "🍼"),
     ]
+    // Prepare once, not on every keystroke. Stable sorting preserves the first-listed tie winner.
+    .map { (" " + $0.0, $0.1) }
+    .sorted { $0.0.count > $1.0.count }
 
     static func guess(for name: String, fallback: String) -> String {
         // Leading space so we only match at word starts: "socks" hits "sock", "that" misses "hat".
         let lowered = " " + name.lowercased()
-        let match = keywords
-            .filter { lowered.contains(" " + $0.0) }
-            .max { $0.0.count < $1.0.count }
-        return match?.1 ?? fallback
+        return keywords.first { lowered.contains($0.0) }?.1 ?? fallback
     }
 }
 
