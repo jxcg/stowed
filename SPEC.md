@@ -191,8 +191,8 @@ where they conflict.
     middle, plus a slick of spectrum sweeping across like a holographic patch. It all fades
     back to nothing when the phone is held still. The playing card gets the spectrum band only.
 32. **Cards have a back.** A faint wash of light sits behind the trip's name and is gone by
-    the time the list starts, with the same marker as the front. Two buttons sit in the corner of every card, above the turn so they
-    never flip with it. Quick view turns the card over to everything packed, grouped by bag and
+    the time the list starts, with the same marker as the front. Two buttons sit in the corner of every card and turn over with it;
+    the back carries its own pair, with back in place of quick view (revised 2026-10-23). Quick view turns the card over to everything packed, grouped by bag and
     scrollable, with the return ticks where a return has started. Edit opens the trip. Tapping
     the card itself still opens the trip. The back is quiet brushed metal with a
     single faint prismatic seam across it, after the Siri icon in iOS 27. It stays a background:

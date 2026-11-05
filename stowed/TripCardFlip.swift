@@ -1,7 +1,9 @@
 import SwiftUI
 
-// A card with a back (decision 32). Quick view turns it over to everything packed, scrollable;
-// edit opens the trip. The two buttons sit above the turn, so they never flip with it.
+// A card with a back (decision 32).
+// In: the trip, what to do on edit, and the card's front.
+// Out: the card with two buttons in its corner. Quick view turns it over to everything packed;
+// edit opens the trip. Each face carries its own buttons, so they turn with the card.
 struct TripCardFlip<Front: View>: View {
     let trip: Trip
     let onEdit: () -> Void
@@ -12,28 +14,30 @@ struct TripCardFlip<Front: View>: View {
     var body: some View {
         ZStack {
             front()
+                .overlay(alignment: .bottomTrailing) { buttons(onBack: false) }
                 .opacity(turned ? 0 : 1)
                 .accessibilityHidden(turned)
             if turned {
                 PackedBack(trip: trip)
+                    .overlay(alignment: .bottomTrailing) { buttons(onBack: true) }
                     .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
             }
         }
         .rotation3DEffect(.degrees(turned ? 180 : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.45)
         .animation(.snappy(duration: 0.45), value: turned)
-        .overlay(alignment: .bottomTrailing) {
-            // They sit on the card, so they ride with it rather than floating above.
-            buttons.offset(x: tilt.width * 0.5, y: tilt.height * 0.5)
-        }
     }
 
-    private var buttons: some View {
+    // The two buttons for one face.
+    // In: which face they sit on. Out: quick view (or back, on the back face) and edit, nudged
+    // a little with the phone's tilt so they ride with the light on the card.
+    private func buttons(onBack: Bool) -> some View {
         HStack(spacing: 10) {
-            control(turned ? "arrow.uturn.backward" : "list.bullet",
-                    label: turned ? "Back to the card" : "Quick view") { turned.toggle() }
+            control(onBack ? "arrow.uturn.backward" : "list.bullet",
+                    label: onBack ? "Back to the card" : "Quick view") { turned.toggle() }
             control("pencil", label: "Edit trip", action: onEdit)
         }
         .padding(14)
+        .offset(x: tilt.width * 0.5, y: tilt.height * 0.5)
     }
 
     private func control(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
