@@ -97,6 +97,14 @@ import Testing
                 first.plans.append(TripPlan(title: "Remove me too"))
                 second.plans.append(TripPlan(title: "Keep me"))
                 try context.save()
+            }
+            try autoreleasepool {
+                let container = try ModelContainer(for: Trip.self, configurations: ModelConfiguration(url: url))
+                let context = ModelContext(container)
+                let first = try #require(context.fetch(FetchDescriptor<Trip>(
+                    predicate: #Predicate { $0.name == "First" }
+                )).first)
+                // Delete a loaded trip without first loading its plans.
                 context.delete(first)
                 try context.save()
             }
