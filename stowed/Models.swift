@@ -15,6 +15,7 @@ final class Trip {
     var suit: String = CardSuit.spade.rawValue
     var texture: String = CardTexture.scatter.rawValue
     @Relationship(deleteRule: .cascade, inverse: \Bag.trip) var bags: [Bag] = []
+    @Relationship(deleteRule: .cascade, inverse: \TripPlan.trip) var plans: [TripPlan] = []
 
     init(name: String, startDate: Date? = nil, endDate: Date? = nil, createdAt: Date = .now,
          palette: CardPalette = CardPalette.allCases.randomElement()!,
@@ -72,6 +73,31 @@ struct ReturnProgress {
 
     // Nothing expected home is not a completed check.
     var isComplete: Bool { expected > 0 && confirmed == expected }
+}
+
+enum PlanCategory: String, CaseIterable {
+    case transport, stay, activity, note
+}
+
+@Model
+final class TripPlan {
+    var title: String
+    var category: String = PlanCategory.note.rawValue
+    var location: String = ""
+    var notes: String = ""
+    var createdAt: Date
+    var trip: Trip?
+
+    init(title: String, category: PlanCategory = .note, location: String = "",
+         notes: String = "", createdAt: Date = .now) {
+        self.title = title
+        self.category = category.rawValue
+        self.location = location
+        self.notes = notes
+        self.createdAt = createdAt
+    }
+
+    var planCategory: PlanCategory { PlanCategory(rawValue: category) ?? .note }
 }
 
 @Model
