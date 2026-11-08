@@ -1,3 +1,4 @@
+import MapKit
 import SwiftData
 import SwiftUI
 
@@ -9,18 +10,55 @@ enum TripsView: String, CaseIterable {
 }
 
 struct ContentView: View {
+    private enum HomeTab: Identifiable {
+        case map, trips
+        var id: Self { self }
+    }
+    @State private var selectedTab = HomeTab.map
+    @State private var creationSource: HomeTab?
+    @State private var openTrip: Trip?
+
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            Tab("Map", systemImage: "map", value: HomeTab.map) {
+                NavigationStack {
+                    Map()
+                        .ignoresSafeArea()
+                        .navigationTitle("Stowed")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button("Add trip", systemImage: "plus") { creationSource = .map }
+                            }
+                        }
+                }
+            }
+            Tab("Trips", systemImage: "suitcase.rolling", value: HomeTab.trips) {
+                TripsLibraryView(openTrip: $openTrip) { creationSource = .trips }
+            }
+        }
+        .sheet(item: $creationSource) { source in
+            TripForm(allowsDates: source == .trips) { trip in
+                selectedTab = .trips
+                openTrip = trip
+            }
+        }
+    }
+}
+
+private struct TripsLibraryView: View {
+    @Binding var openTrip: Trip?
+    let onAdd: () -> Void
     @Environment(\.modelContext) private var context
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
-    // Swiping through the pack is the way in (decision 27).
+    // Swiping through the pack is the default library view (decision 27).
     @AppStorage("tripsView") private var view = TripsView.deck
     // Off by default (decision 23). Nothing in the simulator; needs a real phone.
     @AppStorage("motionEffect") private var motionEffect = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var motion = MotionReader()
     @AppStorage("dividerShape") private var dividerShape = DividerShape.crease
-    @State private var isAdding = false
     @State private var tripToDelete: Trip?
-    @State private var openTrip: Trip?
 
     // Most recent first, oldest last, in both views (decision 27).
     private var orderedTrips: [Trip] {
@@ -67,9 +105,8 @@ struct ContentView: View {
                     }
                     Toggle("Motion effect", isOn: $motionEffect)
                 }
-                Button("Add trip", systemImage: "plus") { isAdding = true }
+                Button("Add trip", systemImage: "plus", action: onAdd)
             }
-            .sheet(isPresented: $isAdding) { TripForm() }
             .onAppear(perform: syncMotion)
             .onDisappear(perform: motion.stop)
             .onChange(of: motionEffect) { syncMotion() }
@@ -120,7 +157,7 @@ struct ContentView: View {
 
 // Passes the phone's tilt down to the cards.
 // In: the motion reader. Out: the same content, with the live tilt available to every card.
-// Reading the tilt here, not in ContentView, means a tilt change redraws the cards and not the
+// Reading the tilt here, not in TripsLibraryView, means a tilt change redraws the cards and not the
 // whole screen.
 private struct LiveTilt: ViewModifier {
     let motion: MotionReader
@@ -155,8 +192,10 @@ private struct NavigationBlurFade: View {
     }
 }
 
-// New trip. Name required. Dates behind a toggle so an undated trip is name + Save.
+// Map starts with just a name. The library also offers presets and optional dates.
 private struct TripForm: View {
+    let allowsDates: Bool
+    let onCreate: (Trip) -> Void
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Trip.createdAt, order: .reverse) private var previous: [Trip]
@@ -164,6 +203,7 @@ private struct TripForm: View {
     @State private var hasDates = false
     @State private var startDate = Date.now
     @State private var endDate = Date.now
+    @State private var saveFailed = false
 
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
 
@@ -171,38 +211,55 @@ private struct TripForm: View {
         NavigationStack {
             Form {
                 TextField("Trip name", text: $name)
-                // One tap for the usual places; the field stays editable.
-                ScrollView(.horizontal) {
-                    HStack {
-                        ForEach(TripPresets.suggestions(previous: previous.map(\.name)), id: \.self) { preset in
-                            Button(preset) { name = preset }.buttonStyle(.bordered)
+                if allowsDates {
+                    // One tap for the usual places; the field stays editable.
+                    ScrollView(.horizontal) {
+                        HStack {
+                            ForEach(TripPresets.suggestions(previous: previous.map(\.name)), id: \.self) { preset in
+                                Button(preset) { name = preset }.buttonStyle(.bordered)
+                            }
                         }
                     }
+                    .scrollIndicators(.hidden)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 0))
+                    Toggle("Dates", isOn: $hasDates)
+                    if hasDates {
+                        DatePicker("Start", selection: $startDate, displayedComponents: .date)
+                        DatePicker("End", selection: $endDate, in: startDate..., displayedComponents: .date)
+                    }
                 }
-                .scrollIndicators(.hidden)
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 0))
-                Toggle("Dates", isOn: $hasDates)
-                if hasDates {
-                    DatePicker("Start", selection: $startDate, displayedComponents: .date)
-                    DatePicker("End", selection: $endDate, in: startDate..., displayedComponents: .date)
+                Section {
+                    Button("Create trip", action: createTrip)
+                        .disabled(trimmedName.isEmpty)
                 }
             }
-            .navigationTitle("New trip")
+            .navigationTitle("Where to?")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        context.insert(Trip(
-                            name: trimmedName,
-                            startDate: hasDates ? startDate : nil,
-                            endDate: hasDates ? endDate : nil
-                        ))
-                        dismiss()
-                    }
-                    .disabled(trimmedName.isEmpty)
-                }
             }
+            .alert("Couldn’t create trip", isPresented: $saveFailed) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Your trip wasn’t saved. Please try again.")
+            }
+        }
+    }
+
+    private func createTrip() {
+        let trip = Trip(
+            name: trimmedName,
+            startDate: hasDates ? startDate : nil,
+            endDate: hasDates ? endDate : nil
+        )
+        context.insert(trip)
+        do {
+            try context.save()
+            onCreate(trip)
+            dismiss()
+        } catch {
+            context.delete(trip)
+            saveFailed = true
         }
     }
 }
