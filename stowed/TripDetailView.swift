@@ -66,6 +66,12 @@ struct TripDetailView: View {
         .searchable(text: $query, prompt: "Find an item")
         .navigationDestination(for: Bag.self) { BagDetailView(bag: $0) }
         .toolbar {
+            // In the toolbar, not the list: a trip with no bags has no list to hold a row.
+            NavigationLink {
+                TripPlansView(trip: trip)
+            } label: {
+                Label("Plans", systemImage: "calendar")
+            }
             Button("Add bag", systemImage: "plus") { isAdding = true }
         }
         .sheet(isPresented: $isAdding) { BagForm(trip: trip, bag: nil) }

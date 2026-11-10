@@ -33,6 +33,66 @@ final class HomeFlowTests: XCTestCase {
     }
 
     @MainActor
+    func testPlanCanBeAddedScheduledAndDeleted() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-tripsView", "stack"]
+        app.launch()
+
+        let tripName = "Planned \(UUID().uuidString.prefix(8))"
+        app.buttons["Add trip"].tap()
+        app.textFields["Trip name"].tap()
+        app.textFields["Trip name"].typeText(tripName)
+        app.buttons["Create trip"].tap()
+        XCTAssertTrue(app.navigationBars[tripName].waitForExistence(timeout: 5))
+
+        app.buttons["Plans"].tap()
+        XCTAssertTrue(app.staticTexts["No plans yet"].waitForExistence(timeout: 5))
+        app.buttons["Add plan"].tap()
+        XCTAssertFalse(app.buttons["Save"].isEnabled)
+        app.textFields["Title"].tap()
+        app.textFields["Title"].typeText("Museum")
+        app.buttons["Save"].tap()
+
+        // VoiceOver reads the kind of plan with its title, as one element.
+        let row = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Museum")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertTrue(row.label.contains("Activity"))
+        XCTAssertTrue(app.staticTexts["Unscheduled"].exists)
+
+        row.tap()
+        XCTAssertTrue(app.switches["On a day"].waitForExistence(timeout: 5))
+        app.switches["On a day"].coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        app.buttons["Save"].tap()
+        XCTAssertTrue(app.staticTexts["Unscheduled"].waitForNonExistence(timeout: 5))
+
+        app.terminate()
+        app.launch()
+        app.tabBars.buttons["Trips"].tap()
+        let card = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@", tripName)).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        card.tap()
+        XCTAssertTrue(app.buttons["Plans"].waitForExistence(timeout: 5))
+        app.buttons["Plans"].tap()
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Unscheduled"].exists)
+
+        // A long swipe deletes straight away; a short one shows the button.
+        row.swipeLeft()
+        if app.buttons["Delete"].waitForExistence(timeout: 2) { app.buttons["Delete"].tap() }
+        XCTAssertTrue(app.staticTexts["No plans yet"].waitForExistence(timeout: 5))
+
+        app.navigationBars.buttons.firstMatch.tap()
+        app.navigationBars.buttons.firstMatch.tap()
+        card.press(forDuration: 2)
+        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5))
+        app.buttons["Delete"].tap()
+        app.buttons["Delete"].tap()
+        XCTAssertTrue(card.waitForNonExistence(timeout: 5))
+        XCUIDevice.shared.press(.home)
+    }
+
+    @MainActor
     func testCreateTripFromMapAndReopenAfterRelaunch() {
         continueAfterFailure = false
         let app = XCUIApplication()
