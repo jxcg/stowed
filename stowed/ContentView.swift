@@ -16,7 +16,10 @@ struct ContentView: View {
     }
     @State private var selectedTab = HomeTab.map
     @State private var creationSource: HomeTab?
-    @State private var openTrip: Trip?
+    // Everything pushed in the Trips tab: a trip, then a bag. One path for both. A trip pushed
+    // by a binding with bags pushed by value on top lost the first tap on a bag row and then
+    // dropped the trip from the back stack (#103).
+    @State private var tripsPath = NavigationPath()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -34,20 +37,20 @@ struct ContentView: View {
                 }
             }
             Tab("Trips", systemImage: "suitcase.rolling", value: HomeTab.trips) {
-                TripsLibraryView(openTrip: $openTrip) { creationSource = .trips }
+                TripsLibraryView(path: $tripsPath) { creationSource = .trips }
             }
         }
         .sheet(item: $creationSource) { source in
             TripForm(allowsDates: source == .trips) { trip in
                 selectedTab = .trips
-                openTrip = trip
+                tripsPath = NavigationPath([trip])
             }
         }
     }
 }
 
 private struct TripsLibraryView: View {
-    @Binding var openTrip: Trip?
+    @Binding var path: NavigationPath
     let onAdd: () -> Void
     @Environment(\.modelContext) private var context
     @Query(sort: \Trip.createdAt, order: .reverse) private var trips: [Trip]
@@ -66,7 +69,7 @@ private struct TripsLibraryView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if trips.isEmpty {
                     ContentUnavailableView(
@@ -94,7 +97,7 @@ private struct TripsLibraryView: View {
             }
             .navigationTitle("Trips")
             .toolbarBackground(.hidden, for: .navigationBar)
-            .navigationDestination(item: $openTrip) { TripDetailView(trip: $0) }
+            .navigationDestination(for: Trip.self) { TripDetailView(trip: $0) }
             .toolbar {
                 Menu("More", systemImage: "ellipsis") {
                     Picker("View", selection: $view) {
@@ -142,8 +145,8 @@ private struct TripsLibraryView: View {
 
     private func card(_ trip: Trip) -> some View {
         // Inset a little so a card never fills the screen edge to edge, and the pile behind shows.
-        TripCardFlip(trip: trip, onEdit: { openTrip = trip }) {
-            Button { openTrip = trip } label: {
+        TripCardFlip(trip: trip, onEdit: { path.append(trip) }) {
+            Button { path.append(trip) } label: {
                 TripCard(trip: trip, holographic: motion.isRunning)
             }
             .buttonStyle(.plain)

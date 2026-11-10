@@ -32,6 +32,50 @@ final class HomeFlowTests: XCTestCase {
         XCUIDevice.shared.press(.home)
     }
 
+    // #103: tapping a bag row must open the bag, and so must a search result.
+    @MainActor
+    func testBagOpensFromRowAndFromSearch() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-tripsView", "stack"]
+        app.launch()
+
+        let tripName = "Bagged \(UUID().uuidString.prefix(8))"
+        app.buttons["Add trip"].tap()
+        app.textFields["Trip name"].tap()
+        app.textFields["Trip name"].typeText(tripName)
+        app.buttons["Create trip"].tap()
+        XCTAssertTrue(app.navigationBars[tripName].waitForExistence(timeout: 5))
+
+        app.buttons["Add bag"].tap()
+        app.textFields["Bag name"].tap()
+        app.textFields["Bag name"].typeText("Rucksack")
+        app.buttons["Save"].tap()
+
+        let bagRow = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Rucksack")).firstMatch
+        XCTAssertTrue(bagRow.waitForExistence(timeout: 5))
+        bagRow.tap()
+        let addItem = app.textFields["Add item"]
+        XCTAssertTrue(addItem.waitForExistence(timeout: 5), "Tapping the bag row did not open the bag")
+        addItem.tap()
+        addItem.typeText("Torch\n")
+        XCTAssertTrue(app.staticTexts["Torch"].waitForExistence(timeout: 5))
+
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.navigationBars[tripName].waitForExistence(timeout: 5))
+        // With bags listed, the search field hides under the title until you pull down.
+        let search = app.searchFields["Find an item"]
+        if !search.waitForExistence(timeout: 2) { app.swipeDown() }
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        search.tap()
+        search.typeText("Torch")
+        let result = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Torch")).firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 5))
+        result.tap()
+        XCTAssertTrue(addItem.waitForExistence(timeout: 5), "Tapping a search result did not open the bag")
+        XCUIDevice.shared.press(.home)
+    }
+
     @MainActor
     func testCreateTripFromMapAndReopenAfterRelaunch() {
         continueAfterFailure = false
