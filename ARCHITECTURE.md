@@ -26,6 +26,11 @@ confirmed items in one pass. Screens read it once per update; it is never stored
 cannot go stale. `itemCount` sums the bag counts without building a flattened inventory.
 `Bag.itemsInPackingOrder` supplies the same item ordering to every bag presentation.
 
+A `TripPlan` belongs to one trip and may have a `day`. The day is text such as
+`2026-11-09`, not a `Date`: it names a place on the calendar, so it cannot slip when the phone
+changes time zone. `PlanDay` converts to and from the date pickers. It is separate from the
+trip's dates, so changing those never moves a plan.
+
 Every attribute added after v0.1.0 carries a default. Without one, SwiftData cannot migrate
 an existing store, the store silently fails to load, and the app runs with no storage at
 all. A test in `ReturnTests.swift` fails if a new mandatory attribute forgets its default.
@@ -40,6 +45,7 @@ all. A test in `ReturnTests.swift` fails if a new mandatory attribute forgets it
 | `BagDetailView.swift` | One bag as a list: rows with a quantity stepper, notes, quick add. |
 | `BagVisualView.swift` | The same bag drawn as a packed suitcase. Tapping ticks items during a return. |
 | `ReturnView.swift` | The return check across every bag in a trip, as tiles. |
+| `TripPlansView.swift` | One trip's plans, by day then Unscheduled, with the add and edit form. |
 
 ## Trip layouts
 

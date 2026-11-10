@@ -51,3 +51,31 @@ enum PackingBeforePlans {
         }
     }
 }
+
+// Frozen persisted shape after plans were added but before they had a day.
+enum PlansBeforeDays {
+    @Model final class Trip {
+        var name: String
+        var createdAt: Date
+        @Relationship(deleteRule: .cascade, inverse: \TripPlan.trip) var plans: [TripPlan] = []
+
+        init(name: String, createdAt: Date) {
+            self.name = name
+            self.createdAt = createdAt
+        }
+    }
+
+    @Model final class TripPlan {
+        var title: String
+        var category: String = "note"
+        var location: String = ""
+        var notes: String = ""
+        var createdAt: Date
+        var trip: Trip?
+
+        init(title: String, createdAt: Date) {
+            self.title = title
+            self.createdAt = createdAt
+        }
+    }
+}

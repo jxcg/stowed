@@ -120,7 +120,7 @@ private struct TripsLibraryView: View {
             ) { trip in
                 Button("Delete", role: .destructive) { context.delete(trip) }
             } message: { _ in
-                Text("Its bags and items go with it.")
+                Text("Its bags, items, and plans go with it.")
             }
         }
     }
