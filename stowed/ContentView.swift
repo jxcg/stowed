@@ -118,7 +118,7 @@ private struct TripsLibraryView: View {
                 titleVisibility: .visible,
                 presenting: tripToDelete
             ) { trip in
-                Button("Delete", role: .destructive) { context.delete(trip) }
+                Button("Delete", role: .destructive) { context.delete(trip); context.saveNow() }
             } message: { _ in
                 Text("Its bags, items, and plans go with it.")
             }

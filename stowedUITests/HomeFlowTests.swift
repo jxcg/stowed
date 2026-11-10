@@ -147,4 +147,61 @@ final class HomeFlowTests: XCTestCase {
         XCTAssertTrue(card.waitForNonExistence(timeout: 5))
         XCUIDevice.shared.press(.home)
     }
+
+    // Regression for #107: packing changes must be on disk before the app can be killed.
+    @MainActor
+    func testBagAndItemSurviveImmediateTermination() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        // The add row only exists in the list presentation of a bag.
+        app.launchArguments = ["-tripsView", "stack", "-bagView", "NO"]
+        app.launch()
+        app.tabBars.buttons["Trips"].tap()
+        app.buttons["Add trip"].tap()
+        let suffix = UUID().uuidString.prefix(8)
+        let tripName = "Packing \(suffix)"
+        let bagName = "Bag \(suffix)"
+        let itemName = "Item \(suffix)"
+        XCTAssertTrue(app.textFields["Trip name"].waitForExistence(timeout: 5))
+        app.textFields["Trip name"].tap()
+        app.textFields["Trip name"].typeText(tripName)
+        app.buttons["Create trip"].tap()
+        XCTAssertTrue(app.navigationBars[tripName].waitForExistence(timeout: 5))
+
+        app.buttons["Add bag"].tap()
+        XCTAssertTrue(app.textFields["Bag name"].waitForExistence(timeout: 5))
+        app.textFields["Bag name"].tap()
+        app.textFields["Bag name"].typeText(bagName)
+        app.buttons["Save"].tap()
+        let bagRow = app.staticTexts[bagName]
+        XCTAssertTrue(bagRow.waitForExistence(timeout: 5))
+        bagRow.tap()
+        XCTAssertTrue(app.textFields["Add item"].waitForExistence(timeout: 5))
+        app.textFields["Add item"].tap()
+        app.textFields["Add item"].typeText(itemName)
+        app.buttons["Add"].tap()
+        let itemRow = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS[c] %@", itemName)).firstMatch
+        XCTAssertTrue(itemRow.waitForExistence(timeout: 5))
+
+        // No pause on purpose: autosave must not be what gets this to disk.
+        app.terminate()
+        app.launch()
+        app.tabBars.buttons["Trips"].tap()
+        let card = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@", tripName)).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        card.tap()
+        XCTAssertTrue(bagRow.waitForExistence(timeout: 5), "bag lost after termination")
+        bagRow.tap()
+        XCTAssertTrue(itemRow.waitForExistence(timeout: 5), "item lost after termination")
+
+        app.navigationBars.buttons.firstMatch.tap()
+        app.navigationBars.buttons.firstMatch.tap()
+        card.press(forDuration: 2)
+        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5))
+        app.buttons["Delete"].tap()
+        app.buttons["Delete"].tap()
+        XCTAssertTrue(card.waitForNonExistence(timeout: 5))
+        XCUIDevice.shared.press(.home)
+    }
 }

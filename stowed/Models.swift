@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import os
 
 @Model
 final class Trip {
@@ -217,5 +218,18 @@ final class Item {
 
     func toggleReturnConfirmed(at date: Date = .now) {
         returnConfirmedAt = isReturnConfirmed ? nil : date
+    }
+}
+
+extension ModelContext {
+    // Autosave runs on a delay, so a change is lost if the app is killed straight after it.
+    // Packing edits call this instead of waiting. If the save fails the change stays in memory
+    // and autosave tries again, so we log rather than interrupt a one-tap edit with an alert.
+    func saveNow() {
+        do {
+            try save()
+        } catch {
+            Logger(subsystem: "stowed", category: "persistence").error("Save failed: \(error)")
+        }
     }
 }
