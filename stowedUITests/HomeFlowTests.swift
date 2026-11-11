@@ -195,7 +195,19 @@ final class HomeFlowTests: XCTestCase {
         bagRow.tap()
         XCTAssertTrue(itemRow.waitForExistence(timeout: 5), "item lost after termination")
 
+        // Deletes save in the same tick the row goes away. Neither may crash the app.
+        itemRow.swipeLeft()
+        app.buttons["Delete"].firstMatch.tap()
+        XCTAssertTrue(itemRow.waitForNonExistence(timeout: 5))
         app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(bagRow.waitForExistence(timeout: 5))
+        bagRow.swipeLeft()
+        app.buttons["Delete"].firstMatch.tap()
+        let confirmDelete = app.sheets.buttons["Delete"].firstMatch
+        XCTAssertTrue(confirmDelete.waitForExistence(timeout: 5))
+        confirmDelete.tap()
+        XCTAssertTrue(bagRow.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Add bag"].exists)
         app.navigationBars.buttons.firstMatch.tap()
         card.press(forDuration: 2)
         XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5))

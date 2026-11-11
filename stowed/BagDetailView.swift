@@ -9,6 +9,7 @@ struct BagDetailView: View {
     @AppStorage("bagView") private var visual = false
     @State private var newName = ""
     @State private var itemToEdit: Item?
+    @State private var deleteFailed = false
     @FocusState private var addFieldFocused: Bool
 
     private var trimmedNewName: String { newName.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -26,6 +27,11 @@ struct BagDetailView: View {
             .pickerStyle(.segmented)
         }
         .sheet(item: $itemToEdit) { ItemForm(item: $0) }
+        .alert("Couldn’t delete", isPresented: $deleteFailed) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Nothing was removed. Please try again.")
+        }
     }
 
     // Tap an item to edit it, or to tick it off once the return check has started.
@@ -56,7 +62,7 @@ struct BagDetailView: View {
                 ForEach(bag.itemsInPackingOrder) { item in
                     ItemRow(item: item) { itemToEdit = item }
                         .swipeActions {
-                            Button("Delete", systemImage: "trash", role: .destructive) { context.delete(item); context.saveNow() }
+                            Button("Delete", systemImage: "trash", role: .destructive) { deleteFailed = !context.deleteNow(item) }
                             if item.returning {
                                 Button("Not returning", systemImage: "arrow.uturn.left.circle") { item.returning = false; context.saveNow() }
                             } else {

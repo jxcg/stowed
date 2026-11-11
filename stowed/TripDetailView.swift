@@ -7,6 +7,7 @@ struct TripDetailView: View {
     @State private var bagToEdit: Bag?
     @State private var isAdding = false
     @State private var bagToDelete: Bag?
+    @State private var deleteFailed = false
     @State private var query = ""
     @State private var isStartingReturn = false
 
@@ -90,9 +91,14 @@ struct TripDetailView: View {
             titleVisibility: .visible,
             presenting: bagToDelete
         ) { bag in
-            Button("Delete", role: .destructive) { context.delete(bag); context.saveNow() }
+            Button("Delete", role: .destructive) { deleteFailed = !context.deleteNow(bag) }
         } message: { bag in
             Text("Its \(bag.items.count) items go with it.")
+        }
+        .alert("Couldn’t delete", isPresented: $deleteFailed) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Nothing was removed. Please try again.")
         }
     }
 }
