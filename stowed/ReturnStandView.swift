@@ -76,6 +76,7 @@ private struct ReturnStandButtons: View {
     let queue: [Item]
     @Binding var putOff: Set<PersistentIdentifier>
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.modelContext) private var context
 
     var body: some View {
         // Side by side until the text is too large to share a row.
@@ -107,6 +108,7 @@ private struct ReturnStandButtons: View {
 
     private func confirm() {
         item?.toggleReturnConfirmed()
+        context.saveNow()
     }
 
     private func putOffCurrent() {
@@ -118,5 +120,6 @@ private struct ReturnStandButtons: View {
 
     private func markNotReturning() {
         item?.returning = false
+        context.saveNow()
     }
 }

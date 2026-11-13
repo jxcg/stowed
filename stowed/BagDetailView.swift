@@ -9,6 +9,7 @@ struct BagDetailView: View {
     @AppStorage("bagView") private var visual = false
     @State private var newName = ""
     @State private var itemToEdit: Item?
+    @State private var deleteFailed = false
     @FocusState private var addFieldFocused: Bool
 
     private var trimmedNewName: String { newName.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -26,6 +27,11 @@ struct BagDetailView: View {
             .pickerStyle(.segmented)
         }
         .sheet(item: $itemToEdit) { ItemForm(item: $0) }
+        .alert("Couldn’t delete", isPresented: $deleteFailed) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Nothing was removed. Please try again.")
+        }
     }
 
     // Tap an item to edit it, or to tick it off once the return check has started.
@@ -34,6 +40,7 @@ struct BagDetailView: View {
             BagVisualView(bag: bag) { item in
                 if bag.trip?.hasStartedReturn == true, item.returning {
                     item.toggleReturnConfirmed()
+                    context.saveNow()
                 } else {
                     itemToEdit = item
                 }
@@ -55,11 +62,11 @@ struct BagDetailView: View {
                 ForEach(bag.itemsInPackingOrder) { item in
                     ItemRow(item: item) { itemToEdit = item }
                         .swipeActions {
-                            Button("Delete", systemImage: "trash", role: .destructive) { context.delete(item) }
+                            Button("Delete", systemImage: "trash", role: .destructive) { deleteFailed = !context.deleteNow(item) }
                             if item.returning {
-                                Button("Not returning", systemImage: "arrow.uturn.left.circle") { item.returning = false }
+                                Button("Not returning", systemImage: "arrow.uturn.left.circle") { item.returning = false; context.saveNow() }
                             } else {
-                                Button("Returning", systemImage: "arrow.uturn.right.circle") { item.returning = true }
+                                Button("Returning", systemImage: "arrow.uturn.right.circle") { item.returning = true; context.saveNow() }
                             }
                         }
                 }
@@ -83,6 +90,7 @@ struct BagDetailView: View {
         guard !trimmedNewName.isEmpty else { return }
         // Same name again = +1, not a duplicate row. addedAt is set in Item.init.
         bag.add(trimmedNewName, emoji: EmojiGuess.guess(for: trimmedNewName, fallback: EmojiGuess.itemFallback))
+        context.saveNow()
         newName = ""
         addFieldFocused = true
     }
@@ -90,6 +98,7 @@ struct BagDetailView: View {
 
 // emoji | name + note | count | −/+. Tap the text to edit.
 private struct ItemRow: View {
+    @Environment(\.modelContext) private var context
     @Bindable var item: Item
     let onTap: () -> Void
     // The bag view shows ticks during the return check, so the list shows them too.
@@ -126,12 +135,14 @@ private struct ItemRow: View {
                 .foregroundStyle(.secondary)
                 .fixedSize()
         }
+        .onChange(of: item.quantity) { context.saveNow() }
     }
 }
 
 // Rename, note, emoji, or move to another bag in the same trip.
 private struct ItemForm: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
     let item: Item
     @State private var name: String
     @State private var note: String
@@ -175,6 +186,7 @@ private struct ItemForm: View {
                         item.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
                         item.emoji = emoji.isEmpty ? EmojiGuess.itemFallback : emoji
                         if let bag, bag !== item.bag { item.bag = bag }
+                        context.saveNow()
                         dismiss()
                     }
                     .disabled(trimmedName.isEmpty)

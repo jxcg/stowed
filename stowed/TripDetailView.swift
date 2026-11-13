@@ -7,6 +7,7 @@ struct TripDetailView: View {
     @State private var bagToEdit: Bag?
     @State private var isAdding = false
     @State private var bagToDelete: Bag?
+    @State private var deleteFailed = false
     @State private var query = ""
     @State private var isStartingReturn = false
 
@@ -45,7 +46,9 @@ struct TripDetailView: View {
                     }
                     Section("Bags") {
                         ForEach(trip.bags) { bag in
-                            NavigationLink(value: bag) {
+                            NavigationLink {
+                                BagDetailView(bag: bag)
+                            } label: {
                                 HStack {
                                     Text(bag.emoji)
                                     Text(bag.name)
@@ -64,7 +67,6 @@ struct TripDetailView: View {
         }
         .navigationTitle(trip.name)
         .searchable(text: $query, prompt: "Find an item")
-        .navigationDestination(for: Bag.self) { BagDetailView(bag: $0) }
         .toolbar {
             // In the toolbar, not the list: a trip with no bags has no list to hold a row.
             NavigationLink {
@@ -77,8 +79,8 @@ struct TripDetailView: View {
         .sheet(isPresented: $isAdding) { BagForm(trip: trip, bag: nil) }
         // Re-import keeps every item; fresh expects nothing until you add or un-grey (decision 15).
         .confirmationDialog("Start the return check", isPresented: $isStartingReturn, titleVisibility: .visible) {
-            Button("Re-import everything I packed") { trip.startReturn(reimport: true) }
-            Button("Start fresh") { trip.startReturn(reimport: false) }
+            Button("Re-import everything I packed") { trip.startReturn(reimport: true); context.saveNow() }
+            Button("Start fresh") { trip.startReturn(reimport: false); context.saveNow() }
         } message: {
             Text("Re-import expects everything you packed to come home. Start fresh if it was all lost or replaced.")
         }
@@ -89,9 +91,14 @@ struct TripDetailView: View {
             titleVisibility: .visible,
             presenting: bagToDelete
         ) { bag in
-            Button("Delete", role: .destructive) { context.delete(bag) }
+            Button("Delete", role: .destructive) { deleteFailed = !context.deleteNow(bag) }
         } message: { bag in
             Text("Its \(bag.items.count) items go with it.")
+        }
+        .alert("Couldn’t delete", isPresented: $deleteFailed) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Nothing was removed. Please try again.")
         }
     }
 }
@@ -106,7 +113,9 @@ private extension TripDetailView {
         } else {
             List(matches) { item in
                 if let bag = item.bag {
-                    NavigationLink(value: bag) {
+                    NavigationLink {
+                        BagDetailView(bag: bag)
+                    } label: {
                         HStack {
                             Text("\(item.emoji) \(item.name)")
                             Spacer()
@@ -122,6 +131,7 @@ private extension TripDetailView {
 // Add or rename a bag. bag == nil means add.
 private struct BagForm: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
     let trip: Trip
     let bag: Bag?
     @State private var name: String
@@ -170,5 +180,6 @@ private struct BagForm: View {
         } else {
             trip.bags.append(Bag(name: trimmedName, emoji: finalEmoji))
         }
+        context.saveNow()
     }
 }

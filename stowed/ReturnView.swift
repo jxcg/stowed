@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 // The only verification pass (decision 15). Tiles, tap to tick (decision 17). No finish, no lock.
@@ -53,6 +54,7 @@ struct ReturnView: View {
 
 // Big emoji, name, count badge. Tap ticks. Long press for not-returning and quantity.
 private struct ItemTile: View {
+    @Environment(\.modelContext) private var context
     let item: Item
 
     private var badge: String? {
@@ -90,24 +92,27 @@ private struct ItemTile: View {
         .onTapGesture {
             guard item.returning else { return }
             item.toggleReturnConfirmed()
+            context.saveNow()
         }
         .contextMenu {
             if item.returning {
                 // Keeps the tick, like the bag list does: switch it back and it is still confirmed.
-                Button("Not returning", systemImage: "arrow.uturn.left.circle") { item.returning = false }
+                Button("Not returning", systemImage: "arrow.uturn.left.circle") { item.returning = false; context.saveNow() }
                 if item.quantity > 1 {
                     Button("One fewer coming home", systemImage: "minus.circle") {
                         item.returnQuantity = max(1, item.quantityComingHome - 1)
+                        context.saveNow()
                     }
                     .disabled(item.quantityComingHome <= 1)
                     if item.returnQuantity != nil {
                         Button("All \(item.quantity) coming home", systemImage: "arrow.counterclockwise") {
                             item.returnQuantity = nil
+                            context.saveNow()
                         }
                     }
                 }
             } else {
-                Button("Returning", systemImage: "arrow.uturn.right.circle") { item.returning = true }
+                Button("Returning", systemImage: "arrow.uturn.right.circle") { item.returning = true; context.saveNow() }
             }
         }
         .accessibilityElement(children: .combine)
