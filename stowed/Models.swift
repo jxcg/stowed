@@ -32,6 +32,16 @@ final class Trip {
 
     var cardPalette: CardPalette { CardPalette(rawValue: palette) ?? .oxblood }
 
+    // The itinerary, ready to draw.
+    // In: this trip's plans. Out: one section per day, earliest first, then Unscheduled if any
+    // plan has no day. Within a section, plans stay in the order they were created.
+    var planSections: [PlanSection] {
+        let ordered = plans.sorted { ($0.createdAt, $0.title) < ($1.createdAt, $1.title) }
+        let byDay = Dictionary(grouping: ordered, by: \.day)
+        let days = byDay.keys.compactMap { $0 }.sorted()
+        return (days + (byDay[nil] == nil ? [] : [nil])).map { PlanSection(day: $0, plans: byDay[$0] ?? []) }
+    }
+
     // Stable across launches: String.hashValue is not, so sum the scalars instead.
     var textureSeed: UInt64 {
         name.unicodeScalars.reduce(UInt64(createdAt.timeIntervalSince1970)) { $0 &* 31 &+ UInt64($1.value) }
@@ -77,6 +87,50 @@ struct ReturnProgress {
 
 enum PlanCategory: String, CaseIterable {
     case transport, stay, activity, note
+
+    var title: String { rawValue.capitalized }
+
+    var symbol: String {
+        switch self {
+        case .transport: "airplane"
+        case .stay: "bed.double"
+        case .activity: "figure.walk"
+        case .note: "note.text"
+        }
+    }
+}
+
+// One heading in the itinerary. A nil day is the Unscheduled section.
+nonisolated struct PlanSection: Identifiable {
+    let day: String?
+    let plans: [TripPlan]
+
+    var id: String { day ?? "unscheduled" }
+}
+
+// Converts between a picked date and the day a plan is stored under, "2026-11-09".
+// A plan's day is a place on the calendar, not a moment. Stored as a Date it would slip to the
+// day before or after when the phone changes time zone. Stored as text it cannot.
+// Always Gregorian, so the text means the same thing on a phone set to any other calendar.
+struct PlanDay {
+    var calendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        return calendar
+    }()
+
+    // In: a date from a picker. Out: its day in this calendar's time zone.
+    func key(for date: Date) -> String {
+        let parts = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+    }
+
+    // In: a stored day. Out: the start of that day in this calendar's time zone, for showing it.
+    func date(for key: String) -> Date? {
+        let parts = key.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3 else { return nil }
+        return calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
+    }
 }
 
 @Model
@@ -86,14 +140,18 @@ final class TripPlan {
     var location: String = ""
     var notes: String = ""
     var createdAt: Date
+    // "2026-11-09", see PlanDay. nil = not on a day yet, which is also what older plans get.
+    // Separate from the trip's own dates, so changing those never moves a plan.
+    var day: String?
     var trip: Trip?
 
     init(title: String, category: PlanCategory = .note, location: String = "",
-         notes: String = "", createdAt: Date = .now) {
+         notes: String = "", day: String? = nil, createdAt: Date = .now) {
         self.title = title
         self.category = category.rawValue
         self.location = location
         self.notes = notes
+        self.day = day
         self.createdAt = createdAt
     }
 

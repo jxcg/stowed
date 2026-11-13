@@ -84,6 +84,95 @@ import Testing
         }
     }
 
+    @Test func plansGroupByDayWithUnscheduledLast() throws {
+        let container = try ModelContainer(for: Trip.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let trip = Trip(name: "Trip")
+        ModelContext(container).insert(trip)
+        trip.plans = [
+            TripPlan(title: "Idea", createdAt: timestamp),
+            TripPlan(title: "Second", day: "2026-11-10", createdAt: timestamp.addingTimeInterval(20)),
+            TripPlan(title: "First", day: "2026-11-10", createdAt: timestamp.addingTimeInterval(10)),
+            TripPlan(title: "Next year", day: "2027-01-01", createdAt: timestamp),
+            TripPlan(title: "Earliest", day: "2026-11-09", createdAt: timestamp.addingTimeInterval(30))
+        ]
+
+        #expect(trip.planSections.map(\.day) == ["2026-11-09", "2026-11-10", "2027-01-01", nil])
+        #expect(trip.planSections[1].plans.map(\.title) == ["First", "Second"])
+        #expect(trip.planSections.last?.plans.map(\.title) == ["Idea"])
+
+        trip.plans.removeAll { $0.day == nil }
+        #expect(trip.planSections.map(\.day) == ["2026-11-09", "2026-11-10", "2027-01-01"])
+    }
+
+    @Test func planDayStaysPutAcrossTimeZones() throws {
+        func days(in zone: String) throws -> PlanDay {
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = try #require(TimeZone(identifier: zone))
+            return PlanDay(calendar: calendar)
+        }
+        let tokyo = try days(in: "Asia/Tokyo")
+        let losAngeles = try days(in: "America/Los_Angeles")
+
+        let lateEveningInTokyo = try #require(tokyo.calendar.date(
+            from: DateComponents(year: 2026, month: 11, day: 9, hour: 23, minute: 30)))
+        let saved = tokyo.key(for: lateEveningInTokyo)
+        #expect(saved == "2026-11-09")
+
+        // Shown and re-saved on the other side of the world, it is still the same day.
+        let shown = try #require(losAngeles.date(for: saved))
+        #expect(losAngeles.key(for: shown) == saved)
+        #expect(losAngeles.date(for: "not a day") == nil)
+    }
+
+    @Test func plannedDaysSurviveReopeningAndTripDateChanges() throws {
+        try withStore { url in
+            try autoreleasepool {
+                let container = try ModelContainer(for: Trip.self, configurations: ModelConfiguration(url: url))
+                let context = ModelContext(container)
+                let trip = Trip(name: "Trip", startDate: timestamp, endDate: timestamp)
+                context.insert(trip)
+                trip.plans.append(TripPlan(title: "Far outside the dates", day: "2031-06-15"))
+                trip.plans.append(TripPlan(title: "Idea"))
+                try context.save()
+            }
+            try autoreleasepool {
+                let container = try ModelContainer(for: Trip.self, configurations: ModelConfiguration(url: url))
+                let context = ModelContext(container)
+                let trip = try #require(context.fetch(FetchDescriptor<Trip>()).first)
+                trip.startDate = timestamp.addingTimeInterval(864_000)
+                trip.endDate = nil
+                try context.save()
+            }
+            try autoreleasepool {
+                let container = try ModelContainer(for: Trip.self, configurations: ModelConfiguration(url: url))
+                let trip = try #require(ModelContext(container).fetch(FetchDescriptor<Trip>()).first)
+                #expect(trip.planSections.map(\.day) == ["2031-06-15", nil])
+                #expect(trip.planSections[0].plans.map(\.title) == ["Far outside the dates"])
+                #expect(trip.planSections[1].plans.map(\.title) == ["Idea"])
+            }
+        }
+    }
+
+    @Test func plansSavedBeforeDaysExistedBecomeUnscheduled() throws {
+        try withStore { url in
+            try autoreleasepool {
+                let container = try ModelContainer(for: PlansBeforeDays.Trip.self,
+                                                   configurations: ModelConfiguration(url: url))
+                let context = ModelContext(container)
+                let trip = PlansBeforeDays.Trip(name: "Existing", createdAt: timestamp)
+                context.insert(trip)
+                trip.plans.append(PlansBeforeDays.TripPlan(title: "Old plan", createdAt: timestamp))
+                try context.save()
+            }
+            try autoreleasepool {
+                let container = try ModelContainer(for: Trip.self, configurations: ModelConfiguration(url: url))
+                let trip = try #require(ModelContext(container).fetch(FetchDescriptor<Trip>()).first)
+                #expect(trip.planSections.map(\.day) == [nil])
+                #expect(trip.planSections[0].plans.map(\.title) == ["Old plan"])
+            }
+        }
+    }
+
     @Test func deletingTripDeletesOnlyItsPlans() throws {
         try withStore { url in
             try autoreleasepool {
