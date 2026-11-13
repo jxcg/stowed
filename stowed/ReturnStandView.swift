@@ -13,21 +13,10 @@ struct ReturnStandView: View {
         let progress = trip.returnProgress
         let item = Trip.nextToCheck(in: queue, putOff: putOff)
         VStack(spacing: 0) {
-            Group {
-                if let item {
-                    current(item)
-                } else if progress.isComplete {
-                    Label("Everything's accounted for. Safe travels home.", systemImage: "checkmark.seal.fill")
-                        .font(.headline)
-                        .foregroundStyle(Color.accentColor)
-                } else {
-                    ContentUnavailableView("Nothing expected home", systemImage: "checklist")
-                }
-            }
-            .padding()
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            buttons(for: item, queue: queue)
+            ReturnStandItem(item: item, isComplete: progress.isComplete)
+                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            ReturnStandButtons(item: item, queue: queue, putOff: $putOff)
                 .padding()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -36,11 +25,42 @@ struct ReturnStandView: View {
         .navigationSubtitle("\(progress.confirmed) / \(progress.expected)")
         .sensoryFeedback(.success, trigger: progress.confirmed)
     }
+}
 
-    private func current(_ item: Item) -> some View {
-        VStack(spacing: 8) {
-            Text(item.emoji).font(.system(size: 96))
-            Text(item.name).font(.largeTitle.bold()).multilineTextAlignment(.center)
+// What to look for next, or why there is nothing to look for.
+private struct ReturnStandItem: View {
+    let item: Item?
+    let isComplete: Bool
+
+    var body: some View {
+        if let item {
+            // A short window (large text, a small display) drops the big emoji before it clips.
+            ViewThatFits(in: .vertical) {
+                ReturnStandItemDetails(item: item, showsEmoji: true)
+                ReturnStandItemDetails(item: item, showsEmoji: false)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("currentItem")
+        } else if isComplete {
+            Label("Everything's accounted for. Safe travels home.", systemImage: "checkmark.seal.fill")
+                .font(.headline)
+                .foregroundStyle(.tint)
+        } else {
+            ContentUnavailableView("Nothing expected home", systemImage: "checklist")
+        }
+    }
+}
+
+private struct ReturnStandItemDetails: View {
+    let item: Item
+    let showsEmoji: Bool
+
+    var body: some View {
+        VStack {
+            if showsEmoji {
+                Text(item.emoji).font(.largeTitle.scaled(by: 2.8))
+            }
+            Text(item.name).font(.largeTitle).bold().multilineTextAlignment(.center)
             if item.quantityComingHome > 1 {
                 Text("× \(item.quantityComingHome)").font(.title2).monospacedDigit().foregroundStyle(.secondary)
             }
@@ -48,40 +68,55 @@ struct ReturnStandView: View {
                 Text("\(bag.emoji) \(bag.name)").font(.headline).foregroundStyle(.secondary)
             }
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("currentItem")
     }
+}
 
-    private func buttons(for item: Item?, queue: [Item]) -> some View {
-        VStack(spacing: 12) {
-            Button {
-                item?.toggleReturnConfirmed()
-            } label: {
+private struct ReturnStandButtons: View {
+    let item: Item?
+    let queue: [Item]
+    @Binding var putOff: Set<PersistentIdentifier>
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        // Side by side until the text is too large to share a row.
+        let row = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout()) : AnyLayout(HStackLayout())
+        VStack {
+            Button(action: confirm) {
                 Label("Got it", systemImage: "checkmark")
-                    .font(.largeTitle.bold())
+                    .font(.largeTitle)
+                    .bold()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .buttonStyle(.borderedProminent)
 
-            HStack(spacing: 12) {
-                Button {
-                    guard let item else { return }
-                    putOff.insert(item.persistentModelID)
-                    // Everything left has been put off: go round again.
-                    if queue.allSatisfy({ putOff.contains($0.persistentModelID) }) { putOff = [] }
-                } label: {
-                    Label("Later", systemImage: "arrow.uturn.down").frame(maxWidth: .infinity, minHeight: 56)
+            row {
+                Button(action: putOffCurrent) {
+                    Label("Later", systemImage: "arrow.uturn.down").frame(maxWidth: .infinity)
                 }
                 .disabled(queue.count < 2)
 
-                Button {
-                    item?.returning = false
-                } label: {
-                    Label("Not returning", systemImage: "arrow.uturn.left.circle").frame(maxWidth: .infinity, minHeight: 56)
+                Button(action: markNotReturning) {
+                    Label("Not returning", systemImage: "arrow.uturn.left.circle").frame(maxWidth: .infinity)
                 }
             }
             .buttonStyle(.bordered)
+            .controlSize(.extraLarge)
         }
         .disabled(item == nil)
+    }
+
+    private func confirm() {
+        item?.toggleReturnConfirmed()
+    }
+
+    private func putOffCurrent() {
+        guard let item else { return }
+        putOff.insert(item.persistentModelID)
+        // Everything left has been put off: go round again.
+        if queue.allSatisfy({ putOff.contains($0.persistentModelID) }) { putOff = [] }
+    }
+
+    private func markNotReturning() {
+        item?.returning = false
     }
 }
