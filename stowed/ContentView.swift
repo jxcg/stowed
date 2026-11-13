@@ -157,6 +157,9 @@ private struct TripsLibraryView: View {
             }
             .buttonStyle(.plain)
         }
+        // A card as wide as a large iPhone and no wider. Without the cap it fills the iPhone
+        // Duo's inner display and, at its fixed shape, grows taller than the screen (#115).
+        .frame(maxWidth: 364)
         .padding(.horizontal, 22)
         .contextMenu {
             Button("Delete", systemImage: "trash", role: .destructive) { tripToDelete = trip }
