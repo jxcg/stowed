@@ -13,7 +13,7 @@ struct TripCard: View {
     @Environment(\.cardTilt) private var tilt
     @Environment(\.cardLightOffset) private var lightOffset
     // ponytail: three shapes up for comparison. Two get deleted once one is chosen.
-    @AppStorage("dividerShape") private var dividerShape = DividerShape.crease
+    @AppStorage("dividerShape") private var dividerShape = DividerShape.ticket
 
     private var ink: NeonInk {
         NeonInk(accent: trip.cardPalette.neonAccent, dark: scheme == .dark,
@@ -216,7 +216,7 @@ private struct UltravioletLayer: View {
 
 // Where the card stops being a picture and starts being a record. Three ways to draw that.
 enum DividerShape: String, CaseIterable {
-    case crease, ticket, sweep
+    case ticket, sweep
     var title: String { rawValue.capitalized }
 }
 
@@ -226,14 +226,6 @@ private struct SectionDivider: View {
 
     var body: some View {
         switch shape {
-        case .crease:
-            // A fold pressed into the sheet: shadow above the line, light below it.
-            VStack(spacing: 0) {
-                Rectangle().fill(.black.opacity(0.18)).frame(height: 1.5)
-                Rectangle().fill(.white.opacity(0.6)).frame(height: 1.5)
-            }
-            .padding(.horizontal, 10)
-
         case .ticket:
             // Cut like a stub, with a perforation running between the notches.
             ZStack {
