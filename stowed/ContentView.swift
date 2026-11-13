@@ -62,6 +62,7 @@ private struct TripsLibraryView: View {
     @State private var motion = MotionReader()
     @AppStorage("dividerShape") private var dividerShape = DividerShape.crease
     @State private var tripToDelete: Trip?
+    @State private var deleteFailed = false
 
     // Most recent first, oldest last, in both views (decision 27).
     private var orderedTrips: [Trip] {
@@ -121,9 +122,14 @@ private struct TripsLibraryView: View {
                 titleVisibility: .visible,
                 presenting: tripToDelete
             ) { trip in
-                Button("Delete", role: .destructive) { context.delete(trip) }
+                Button("Delete", role: .destructive) { deleteFailed = !context.deleteNow(trip) }
             } message: { _ in
                 Text("Its bags, items, and plans go with it.")
+            }
+            .alert("Couldn’t delete", isPresented: $deleteFailed) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Nothing was removed. Please try again.")
             }
         }
     }

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import os
 
 @Model
 final class Trip {
@@ -217,5 +218,34 @@ final class Item {
 
     func toggleReturnConfirmed(at date: Date = .now) {
         returnConfirmedAt = isReturnConfirmed ? nil : date
+    }
+}
+
+extension ModelContext {
+    private static let log = Logger(subsystem: "stowed", category: "persistence")
+
+    // Autosave runs on a delay, so a change is lost if the app is killed straight after it.
+    // Packing edits call this instead of waiting. If the save fails the edit is still on screen
+    // and in memory, and autosave tries again, so we log rather than interrupt a one-tap edit.
+    func saveNow() {
+        do {
+            try save()
+        } catch {
+            Self.log.error("Save failed: \(error)")
+        }
+    }
+
+    // Deletes are different: a failed save would leave the thing gone from the screen but still
+    // on disk. Undo the delete and return false so the caller can say so.
+    func deleteNow(_ model: some PersistentModel) -> Bool {
+        delete(model)
+        do {
+            try save()
+            return true
+        } catch {
+            rollback()
+            Self.log.error("Delete failed: \(error)")
+            return false
+        }
     }
 }
