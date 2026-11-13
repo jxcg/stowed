@@ -57,7 +57,7 @@ private struct TripsLibraryView: View {
     @AppStorage("motionEffect") private var motionEffect = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var motion = MotionReader()
-    @AppStorage("dividerShape") private var dividerShape = DividerShape.crease
+    @AppStorage("dividerShape") private var dividerShape = DividerShape.ticket
     @State private var tripToDelete: Trip?
 
     // Most recent first, oldest last, in both views (decision 27).
