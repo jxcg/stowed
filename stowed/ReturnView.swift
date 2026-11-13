@@ -39,6 +39,13 @@ struct ReturnView: View {
         .navigationTitle("Return check")
         .navigationSubtitle("\(progress.confirmed) / \(progress.expected)")
         .sensoryFeedback(.success, trigger: progress.confirmed)
+        .toolbar {
+            NavigationLink {
+                ReturnStandView(trip: trip)
+            } label: {
+                Label("One at a time", systemImage: "rectangle.split.1x2")
+            }
+        }
     }
 }
 

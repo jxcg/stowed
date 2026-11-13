@@ -147,4 +147,72 @@ final class HomeFlowTests: XCTestCase {
         XCTAssertTrue(card.waitForNonExistence(timeout: 5))
         XCUIDevice.shared.press(.home)
     }
+
+    // #110: the return check one item at a time.
+    @MainActor
+    func testReturnCheckOneAtATime() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        // The add row only exists in the list presentation of a bag.
+        app.launchArguments = ["-tripsView", "stack", "-bagView", "NO"]
+        app.launch()
+        app.tabBars.buttons["Trips"].tap()
+        app.buttons["Add trip"].tap()
+        let suffix = UUID().uuidString.prefix(8)
+        let tripName = "Stand \(suffix)"
+        let bagName = "Bag \(suffix)"
+        let first = "Aaa \(suffix)"
+        let second = "Bbb \(suffix)"
+        XCTAssertTrue(app.textFields["Trip name"].waitForExistence(timeout: 5))
+        app.textFields["Trip name"].tap()
+        app.textFields["Trip name"].typeText(tripName)
+        app.buttons["Create trip"].tap()
+        XCTAssertTrue(app.navigationBars[tripName].waitForExistence(timeout: 5))
+
+        app.buttons["Add bag"].tap()
+        XCTAssertTrue(app.textFields["Bag name"].waitForExistence(timeout: 5))
+        app.textFields["Bag name"].tap()
+        app.textFields["Bag name"].typeText(bagName)
+        app.buttons["Save"].tap()
+        XCTAssertTrue(app.staticTexts[bagName].waitForExistence(timeout: 5))
+        app.staticTexts[bagName].tap()
+        let addField = app.textFields["Add item"]
+        XCTAssertTrue(addField.waitForExistence(timeout: 5))
+        addField.tap()
+        for name in [first, second] {
+            addField.typeText(name)
+            app.buttons["Add"].tap()
+            let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] %@", name)).firstMatch
+            XCTAssertTrue(row.waitForExistence(timeout: 5))
+        }
+        app.navigationBars.buttons.firstMatch.tap()
+
+        app.buttons["Start return check"].tap()
+        app.buttons["Re-import everything I packed"].tap()
+        let returnLink = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@", "Return check")).firstMatch
+        XCTAssertTrue(returnLink.waitForExistence(timeout: 5))
+        returnLink.tap()
+        app.buttons["One at a time"].tap()
+
+        let current = app.descendants(matching: .any)["currentItem"]
+        XCTAssertTrue(current.waitForExistence(timeout: 5))
+        XCTAssertTrue(current.label.contains(first))
+        app.buttons["Later"].tap()
+        XCTAssertTrue(current.label.contains(second))
+        app.buttons["Got it"].tap()
+        XCTAssertTrue(current.label.contains(first))
+        app.buttons["Got it"].tap()
+        XCTAssertTrue(app.staticTexts["Everything's accounted for. Safe travels home."].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Got it"].isEnabled)
+
+        for _ in 0..<3 { app.navigationBars.buttons.firstMatch.tap() }
+        let card = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@", tripName)).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        card.press(forDuration: 2)
+        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5))
+        app.buttons["Delete"].tap()
+        app.buttons["Delete"].tap()
+        XCTAssertTrue(card.waitForNonExistence(timeout: 5))
+        XCUIDevice.shared.press(.home)
+    }
 }
