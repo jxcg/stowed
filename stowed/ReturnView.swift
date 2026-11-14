@@ -40,6 +40,15 @@ struct ReturnView: View {
         .navigationTitle("Return check")
         .navigationSubtitle("\(progress.confirmed) / \(progress.expected)")
         .sensoryFeedback(.success, trigger: progress.confirmed)
+        .toolbar {
+            // A destination link, like the link that pushed this screen. A value link from
+            // here does not push; #113 moves the whole stack to value links.
+            NavigationLink {
+                ReturnStandView(trip: trip)
+            } label: {
+                Label("One at a time", systemImage: "rectangle.split.1x2")
+            }
+        }
     }
 }
 

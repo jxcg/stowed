@@ -78,6 +78,18 @@ final class Trip {
     }
 }
 
+extension Trip {
+    // One-at-a-time check (#110). Still to confirm, in the order the tile view shows them.
+    var returnQueue: [Item] {
+        bags.flatMap(\.itemsInPackingOrder).filter { $0.returning && !$0.isReturnConfirmed }
+    }
+
+    // The first item not put off. Once everything left has been put off, start over.
+    static func nextToCheck(in queue: [Item], putOff: Set<PersistentIdentifier>) -> Item? {
+        queue.first { !putOff.contains($0.persistentModelID) } ?? queue.first
+    }
+}
+
 struct ReturnProgress {
     let expected: Int
     let confirmed: Int
