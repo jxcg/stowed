@@ -25,8 +25,6 @@ struct TripCard: View {
         return start.formatted(.dateTime.day().month(.abbreviated).year()).uppercased()
     }
 
-    private var dark: Bool { scheme == .dark }
-
     // How hard the light is hitting it. Nothing at rest, full at a good tilt.
     private var ultraviolet: Double {
         let fromTilt = holographic ? min(1, hypot(tilt.width, tilt.height) / 9) : 0
@@ -40,7 +38,7 @@ struct TripCard: View {
                 .frame(maxHeight: .infinity)
             TripCardChips(trip: trip, background: ink.haze, border: ink.glow)
             SectionDivider(ink: ink, shape: dividerShape)
-            TripCardDetails(trip: trip, text: ink.text, shadow: dark ? .black : .white)
+            TripCardDetails(trip: trip, text: ink.text, shadow: scheme == .dark ? .black : .white)
             footer
         }
         .background(BeadBlastSteel(tilt: tilt, lightOffset: lightOffset, warm: ink.glow, cool: ink.glow2))
@@ -72,7 +70,7 @@ struct TripCard: View {
         // A fine grain along the rim. Close enough to read as texture rather than a pattern.
         .overlay(
             RoundedRectangle(cornerRadius: 22)
-                .strokeBorder(Color.white.opacity(dark ? 0.1 : 0.2), style: StrokeStyle(lineWidth: 4, dash: [1.5, 2.5]))
+                .strokeBorder(Color.white.opacity(scheme == .dark ? 0.1 : 0.2), style: StrokeStyle(lineWidth: 4, dash: [1.5, 2.5]))
         )
         .aspectRatio(0.72, contentMode: .fit)
         .shadow(color: .black.opacity(0.16), radius: 10, y: 6)

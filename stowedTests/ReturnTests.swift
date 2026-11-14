@@ -238,7 +238,7 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
     // added after v0.1.0 must carry a default.
     @Test func newMandatoryAttributesHaveDefaults() throws {
         let schema = Schema([Trip.self])
-        let added = [("Item", "quantity"), ("Item", "note"), ("Item", "returning"), ("Trip", "palette"), ("Trip", "suit"), ("Trip", "texture")]
+        let added = [("Item", "quantity"), ("Item", "note"), ("Item", "returning"), ("Trip", "palette")]
         for (entityName, name) in added {
             let entity = try #require(schema.entities.first { $0.name == entityName })
             let attribute = try #require(entity.attributesByName[name])

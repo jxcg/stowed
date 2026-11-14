@@ -253,7 +253,9 @@ import Testing
                 #expect(trip.startDate == timestamp.addingTimeInterval(100))
                 #expect(trip.endDate == timestamp.addingTimeInterval(200))
                 #expect(trip.returnStartedAt == timestamp.addingTimeInterval(300))
-                #expect(trip.palette == "navy" && trip.suit == "heart" && trip.texture == "lattice")
+                // The retired suit and texture columns still in this old store are dropped by
+                // the upgrade; everything the app reads today survives.
+                #expect(trip.palette == "navy")
                 #expect(trip.bags.count == 1)
                 let bag = try #require(trip.bags.first)
                 #expect(bag.name == "Existing bag" && bag.emoji == "🎒")

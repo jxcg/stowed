@@ -48,15 +48,10 @@ struct TripPlansView: View {
         }
     }
 
-    // Saved at once, so a deleted plan cannot come back if the app is closed straight after.
+    // Deletes are saved at once and rolled back if the write fails, so a deleted plan cannot
+    // come back if the app is closed straight after, and cannot vanish if the write fails.
     private func delete(_ plan: TripPlan) {
-        context.delete(plan)
-        do {
-            try context.save()
-        } catch {
-            context.rollback()
-            deleteFailed = true
-        }
+        deleteFailed = !context.deleteNow(plan)
     }
 
     // In: a section. Out: its date with the year, since a plan can sit outside the trip's dates.
