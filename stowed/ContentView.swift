@@ -90,7 +90,7 @@ private struct TripsLibraryView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             // Set once here, above the deck, so the deck can hand the live value to the top card
             // alone. Set inside each card, it overrode that and every card redrew per tick.
-            .environment(\.cardTilt, motion.tilt)
+            .modifier(LiveTilt(motion: motion))
             // Its own reader, so a safe-area change redraws the fade, not the whole screen.
             .overlay(alignment: .top) {
                 GeometryReader { NavigationBlurFade(topInset: $0.safeAreaInsets.top) }
@@ -164,6 +164,17 @@ private struct TripsLibraryView: View {
         .contextMenu {
             Button("Delete", systemImage: "trash", role: .destructive) { tripToDelete = trip }
         }
+    }
+}
+
+// Passes the phone's tilt down to the cards. Reading the tilt here, not in the library body,
+// keeps a motion tick from re-evaluating the library and its sort: only this modifier's body
+// subscribes to the reader.
+private struct LiveTilt: ViewModifier {
+    let motion: MotionReader
+
+    func body(content: Content) -> some View {
+        content.environment(\.cardTilt, motion.tilt)
     }
 }
 
