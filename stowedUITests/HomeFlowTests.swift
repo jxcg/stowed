@@ -24,8 +24,7 @@ final class HomeFlowTests: XCTestCase {
         let card = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@", tripName)).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 5))
         XCTAssertFalse(card.label.contains("NO DATES"))
-        card.press(forDuration: 2)
-        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5))
+        pressCardForDelete(card, app: app)
         app.buttons["Delete"].tap()
         app.buttons["Delete"].tap()
         XCTAssertTrue(card.waitForNonExistence(timeout: 5))
@@ -128,8 +127,7 @@ final class HomeFlowTests: XCTestCase {
 
         app.navigationBars.buttons.firstMatch.tap()
         app.navigationBars.buttons.firstMatch.tap()
-        card.press(forDuration: 2)
-        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5))
+        pressCardForDelete(card, app: app)
         app.buttons["Delete"].tap()
         app.buttons["Delete"].tap()
         XCTAssertTrue(card.waitForNonExistence(timeout: 5))
@@ -184,8 +182,7 @@ final class HomeFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["Add bag"].exists)
 
         app.navigationBars.buttons.firstMatch.tap()
-        card.press(forDuration: 2)
-        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5))
+        pressCardForDelete(card, app: app)
         app.buttons["Delete"].tap()
         app.buttons["Delete"].tap()
         XCTAssertTrue(card.waitForNonExistence(timeout: 5))
@@ -253,8 +250,7 @@ final class HomeFlowTests: XCTestCase {
         XCTAssertTrue(bagRow.waitForNonExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Add bag"].exists)
         app.navigationBars.buttons.firstMatch.tap()
-        card.press(forDuration: 2)
-        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5))
+        pressCardForDelete(card, app: app)
         app.buttons["Delete"].tap()
         app.buttons["Delete"].tap()
         XCTAssertTrue(card.waitForNonExistence(timeout: 5))
@@ -321,11 +317,21 @@ final class HomeFlowTests: XCTestCase {
         for _ in 0..<3 { app.navigationBars.buttons.firstMatch.tap() }
         let card = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@", tripName)).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 5))
-        card.press(forDuration: 2)
-        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5))
+        pressCardForDelete(card, app: app)
         app.buttons["Delete"].tap()
         app.buttons["Delete"].tap()
         XCTAssertTrue(card.waitForNonExistence(timeout: 5))
         XCUIDevice.shared.press(.home)
+    }
+
+    // A long-press menu sometimes misses on a busy simulator, especially right after a pop.
+    // Press again until Delete shows.
+    @MainActor
+    private func pressCardForDelete(_ card: XCUIElement, app: XCUIApplication) {
+        for _ in 0..<3 {
+            card.press(forDuration: 2)
+            if app.buttons["Delete"].waitForExistence(timeout: 5) { return }
+        }
+        XCTFail("Delete never appeared from the card's context menu")
     }
 }
