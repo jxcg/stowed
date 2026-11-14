@@ -56,6 +56,26 @@ final class Trip {
         items.filter { $0.name.localizedStandardContains(query) }
     }
 
+    // Where today sits against the trip, for the open-book page (#117).
+    // In: today, and the calendar to count days in. The dates are stored as moments; they only
+    // become days here, in the phone's own calendar.
+    // Out: "IN 9 DAYS", "TOMORROW", "DAY 3 OF 7", "HOME YESTERDAY", "HOME 4 DAYS AGO", or
+    // "NO DATES". A trip with a start but no end lasts one day.
+    func countdown(on today: Date = .now, calendar: Calendar = .current) -> String {
+        guard let startDate else { return "NO DATES" }
+        func days(from: Date, to: Date) -> Int {
+            calendar.dateComponents([.day], from: calendar.startOfDay(for: from), to: calendar.startOfDay(for: to)).day ?? 0
+        }
+        let end = max(startDate, endDate ?? startDate)
+        let untilStart = days(from: today, to: startDate)
+        let sinceEnd = days(from: end, to: today)
+        if untilStart > 1 { return "IN \(untilStart) DAYS" }
+        if untilStart == 1 { return "TOMORROW" }
+        if sinceEnd > 1 { return "HOME \(sinceEnd) DAYS AGO" }
+        if sinceEnd == 1 { return "HOME YESTERDAY" }
+        return "DAY \(1 - untilStart) OF \(days(from: startDate, to: end) + 1)"
+    }
+
     // MARK: Return check (decision 15). No lock, no finish. Just a start.
 
     var hasStartedReturn: Bool { returnStartedAt != nil }

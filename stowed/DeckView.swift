@@ -6,8 +6,9 @@ import SwiftUI
 // Swipe the top card either way and it goes to the bottom of the pack, like a real deck.
 struct DeckView<Card: View>: View {
     let trips: [Trip]
+    // Which trip is on top. Owned by the page, so it can describe that trip beside the deck.
+    @Binding var topIndex: Int
     @ViewBuilder let card: (Trip) -> Card
-    @State private var topIndex = 0
     @State private var drag: CGSize = .zero
     // How hard it is being thrown, which the top card reads to show its printing.
     @State private var reveal: Double = 0

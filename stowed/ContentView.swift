@@ -63,6 +63,8 @@ private struct TripsLibraryView: View {
     @AppStorage("dividerShape") private var dividerShape = DividerShape.ticket
     @State private var tripToDelete: Trip?
     @State private var deleteFailed = false
+    // The deck's top card, counted up as cards are swiped. It wraps round the trips.
+    @State private var deckTop = 0
 
     // Most recent first, oldest last, in both views (decision 27).
     private var orderedTrips: [Trip] {
@@ -71,20 +73,7 @@ private struct TripsLibraryView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            Group {
-                if trips.isEmpty {
-                    ContentUnavailableView(
-                        "No trips yet",
-                        systemImage: "suitcase",
-                        description: Text("Tap + to plan your first one.")
-                    )
-                } else {
-                    switch view {
-                    case .deck: DeckView(trips: orderedTrips) { card($0) }
-                    case .stack: stack
-                    }
-                }
-            }
+            library
             // Fill the screen so the fade's reader below starts at the top safe-area edge. The
             // deck alone is shorter and sits centred, which would read an inset of zero.
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -94,6 +83,9 @@ private struct TripsLibraryView: View {
             // Its own reader, so a safe-area change redraws the fade, not the whole screen.
             .overlay(alignment: .top) {
                 GeometryReader { NavigationBlurFade(topInset: $0.safeAreaInsets.top) }
+                    // Out to the screen's side edges, so the fade does not stop in a hard line
+                    // at the iPhone Duo's status rail (#117).
+                    .ignoresSafeArea(edges: .horizontal)
                     .allowsHitTesting(false)
             }
             .navigationTitle("Trips")
@@ -130,6 +122,29 @@ private struct TripsLibraryView: View {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text("Nothing was removed. Please try again.")
+            }
+        }
+    }
+
+    // The page's content: the empty state, or the cards with their panel on a folding phone.
+    @ViewBuilder private var library: some View {
+        if trips.isEmpty {
+            ContentUnavailableView(
+                "No trips yet",
+                systemImage: "suitcase",
+                description: Text("Tap + to plan your first one.")
+            )
+        } else {
+            let ordered = orderedTrips
+            // Deck: the card on top. Stack: the newest trip.
+            let featured = ordered[view == .deck ? deckTop % ordered.count : 0]
+            FoldSpread {
+                TripSpreadPanel(trip: featured)
+            } cards: {
+                switch view {
+                case .deck: DeckView(trips: ordered, topIndex: $deckTop) { card($0) }
+                case .stack: stack
+                }
             }
         }
     }
