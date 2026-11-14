@@ -25,6 +25,39 @@ private func makeTrip(items count: Int, in context: ModelContext) -> (Trip, Bag)
     return (trip, bag)
 }
 
+@Suite struct ReturnQueue {
+
+    @Test func queueHoldsOnlyWhatIsStillToConfirmInPackingOrder() throws {
+        let context = try makeContext()
+        let (trip, bag) = makeTrip(items: 0, in: context)
+        let names = ["Socks", "Charger", "Book", "Towel"]
+        for (i, name) in names.enumerated() {
+            bag.items.append(Item(name: name, emoji: "📦", addedAt: at(Double(i))))
+        }
+        trip.startReturn(reimport: true, at: at(10))
+        let byName = Dictionary(uniqueKeysWithValues: bag.items.map { ($0.name, $0) })
+        byName["Charger"]?.toggleReturnConfirmed(at: at(11))
+        byName["Towel"]?.returning = false
+
+        #expect(trip.returnQueue.map(\.name) == ["Socks", "Book"])
+    }
+
+    @Test func laterSkipsAnItemUntilEverythingLeftHasBeenPutOff() throws {
+        let context = try makeContext()
+        let (trip, bag) = makeTrip(items: 0, in: context)
+        bag.items.append(Item(name: "Socks", emoji: "🧦", addedAt: at(0)))
+        bag.items.append(Item(name: "Book", emoji: "📕", addedAt: at(1)))
+        trip.startReturn(reimport: true, at: at(10))
+        let queue = trip.returnQueue
+        let socks = queue[0].persistentModelID, book = queue[1].persistentModelID
+
+        #expect(Trip.nextToCheck(in: queue, putOff: [])?.name == "Socks")
+        #expect(Trip.nextToCheck(in: queue, putOff: [socks])?.name == "Book")
+        #expect(Trip.nextToCheck(in: queue, putOff: [socks, book])?.name == "Socks")
+        #expect(Trip.nextToCheck(in: [], putOff: []) == nil)
+    }
+}
+
 @Suite struct ReturnSemantics {
 
     @Test func progressTracksChangesAcrossBags() throws {

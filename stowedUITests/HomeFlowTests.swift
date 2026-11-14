@@ -40,18 +40,53 @@ final class HomeFlowTests: XCTestCase {
         XCUIDevice.shared.press(.home)
     }
 
-    // #110's one-at-a-time return check is covered by a UI test in its own PR;
-    // main's ReturnView is still the tile view, so there is nothing to drive here yet.
+    // #110: the return check one item at a time.
+    @MainActor
+    func testReturnCheckOneAtATime() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        // The add row only exists in the list presentation of a bag.
+        app.launchArguments = ["-tripsView", "stack", "-bagView", "NO"]
+        app.launch()
+        let suffix = UUID().uuidString.prefix(8)
+        let first = "Aaa \(suffix)"
+        let second = "Bbb \(suffix)"
+        createTripWithBagAndItem(app, firstItem: first, secondItem: second)
 
-    // Shared setup: a trip holding a bag holding one item.
-    // Ends inside the bag, after the item's row has appeared.
+        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["Start return check"].tap()
+        app.buttons["Re-import everything I packed"].tap()
+        let returnLink = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@", "Return check")).firstMatch
+        XCTAssertTrue(returnLink.waitForExistence(timeout: 10))
+        returnLink.tap()
+        app.buttons["One at a time"].tap()
+
+        let current = app.descendants(matching: .any)["currentItem"]
+        XCTAssertTrue(current.waitForExistence(timeout: 10))
+        XCTAssertTrue(current.label.contains(first))
+        app.buttons["Later"].tap()
+        XCTAssertTrue(current.label.contains(second))
+        app.buttons["Got it"].tap()
+        XCTAssertTrue(current.label.contains(first))
+        app.buttons["Got it"].tap()
+        XCTAssertTrue(app.staticTexts["Everything's accounted for. Safe travels home."].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["Got it"].isEnabled)
+        XCUIDevice.shared.press(.home)
+    }
+
+    // Shared setup: a trip holding a bag holding one or two items.
+    // Ends inside the bag, after the last item's row has appeared.
     @MainActor
     @discardableResult
-    private func createTripWithBagAndItem(_ app: XCUIApplication) -> (trip: String, bag: String, item: String) {
+    private func createTripWithBagAndItem(
+        _ app: XCUIApplication,
+        firstItem: String? = nil,
+        secondItem: String? = nil
+    ) -> (trip: String, bag: String, item: String) {
         let suffix = UUID().uuidString.prefix(8)
         let tripName = "Trip \(suffix)"
         let bagName = "Bag \(suffix)"
-        let itemName = "Item \(suffix)"
+        let itemName = firstItem ?? "Item \(suffix)"
 
         app.tabBars.buttons["Trips"].tap()
         app.buttons["Add trip"].tap()
@@ -75,6 +110,11 @@ final class HomeFlowTests: XCTestCase {
         addField.typeText(itemName)
         app.buttons["Add"].tap()
         XCTAssertTrue(app.staticTexts[itemName].waitForExistence(timeout: 10))
+        if let secondItem {
+            addField.typeText(secondItem)
+            app.buttons["Add"].tap()
+            XCTAssertTrue(app.staticTexts[secondItem].waitForExistence(timeout: 10))
+        }
         return (tripName, bagName, itemName)
     }
 }
