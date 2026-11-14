@@ -1,12 +1,8 @@
 import CoreGraphics
 import Foundation
 
-// Legacy texture choices retained for stored trips. Current cards no longer use them.
-enum CardTexture: String, CaseIterable {
-    case scatter, lattice, stamp
-}
-
-// SplitMix64. Tiny, deterministic, good enough for scattering glyphs.
+// One-character random draw shared by the deck's card placement and the card's UV fibres:
+// deterministic per seed, so a pack never reshuffles itself while you look at it.
 struct SeededRandom {
     private var state: UInt64
     init(seed: UInt64) { state = seed }

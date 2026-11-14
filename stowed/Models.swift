@@ -13,22 +13,16 @@ final class Trip {
     // Card look, picked once at creation and kept (decisions 20, 21). Stored as raw strings so
     // adding a palette later is a new case, not a migration. Defaults are what old rows get.
     var palette: String = CardPalette.oxblood.rawValue
-    var suit: String = CardSuit.spade.rawValue
-    var texture: String = CardTexture.scatter.rawValue
     @Relationship(deleteRule: .cascade, inverse: \Bag.trip) var bags: [Bag] = []
     @Relationship(deleteRule: .cascade, inverse: \TripPlan.trip) var plans: [TripPlan] = []
 
     init(name: String, startDate: Date? = nil, endDate: Date? = nil, createdAt: Date = .now,
-         palette: CardPalette = CardPalette.allCases.randomElement()!,
-         suit: CardSuit = CardSuit.allCases.randomElement()!,
-         texture: CardTexture = CardTexture.allCases.randomElement()!) {
+         palette: CardPalette = CardPalette.allCases.randomElement()!) {
         self.name = name
         self.startDate = startDate
         self.endDate = endDate
         self.createdAt = createdAt
         self.palette = palette.rawValue
-        self.suit = suit.rawValue
-        self.texture = texture.rawValue
     }
 
     var cardPalette: CardPalette { CardPalette(rawValue: palette) ?? .oxblood }

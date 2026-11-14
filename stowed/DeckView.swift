@@ -188,7 +188,7 @@ private struct DeckDots: View {
     // system cancelled (no onEnded) cannot leak its anchor into the next one.
     @State private var gestureStart: (at: CGPoint, dot: Int)?
 
-    private static var window: Int { 9 }
+    private static let window = 9
 
     // Which dots to draw: up to nine, centred on the current trip where possible.
     private var range: Range<Int> {

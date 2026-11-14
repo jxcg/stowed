@@ -17,12 +17,6 @@ enum CardPalette: String, CaseIterable {
 
 }
 
-// Left over from the playing-card design: still stored on every trip, no longer drawn.
-// ponytail: drop with Trip.suit in the first versioned schema migration.
-enum CardSuit: String, CaseIterable {
-    case spade, heart, diamond, club
-}
-
 // Three finishes for the metal print. The sheet is the same grey in all of them; what changes
 // is the colour of the light landing on it, so a shelf of cards looks like one set with each
 // card still its own.

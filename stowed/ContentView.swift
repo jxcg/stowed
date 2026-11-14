@@ -182,10 +182,9 @@ private struct TripsLibraryView: View {
     }
 }
 
-// Passes the phone's tilt down to the cards.
-// In: the motion reader. Out: the same content, with the live tilt available to every card.
-// Reading the tilt here, not in TripsLibraryView, means a tilt change redraws the cards and not the
-// whole screen.
+// Passes the phone's tilt down to the cards. Reading the tilt here, not in the library body,
+// keeps a motion tick from re-evaluating the library and its sort: only this modifier's body
+// subscribes to the reader.
 private struct LiveTilt: ViewModifier {
     let motion: MotionReader
 
